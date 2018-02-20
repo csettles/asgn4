@@ -7,7 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		84144D22203B943D00D4AA34 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 84144D21203B943D00D4AA34 /* main.c */; };
+		84144D22203B943D00D4AA34 /* mytar.c in Sources */ = {isa = PBXBuildFile; fileRef = 84144D21203B943D00D4AA34 /* mytar.c */; };
+		84144D2B203B9B0F00D4AA34 /* mem.c in Sources */ = {isa = PBXBuildFile; fileRef = 84144D2A203B9B0F00D4AA34 /* mem.c */; };
+		84144D2D203B9B8500D4AA34 /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = 84144D2C203B9B8500D4AA34 /* Makefile */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -24,7 +26,12 @@
 
 /* Begin PBXFileReference section */
 		84144D1E203B943D00D4AA34 /* asgn4 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = asgn4; sourceTree = BUILT_PRODUCTS_DIR; };
-		84144D21203B943D00D4AA34 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		84144D21203B943D00D4AA34 /* mytar.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = mytar.c; sourceTree = "<group>"; };
+		84144D28203B947700D4AA34 /* mytar.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mytar.h; sourceTree = "<group>"; };
+		84144D29203B9B0F00D4AA34 /* mem.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = mem.h; sourceTree = "<group>"; };
+		84144D2A203B9B0F00D4AA34 /* mem.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = mem.c; sourceTree = "<group>"; };
+		84144D2C203B9B8500D4AA34 /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
+		84144D2E203B9D3100D4AA34 /* README */ = {isa = PBXFileReference; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,7 +64,12 @@
 		84144D20203B943D00D4AA34 /* asgn4 */ = {
 			isa = PBXGroup;
 			children = (
-				84144D21203B943D00D4AA34 /* main.c */,
+				84144D21203B943D00D4AA34 /* mytar.c */,
+				84144D28203B947700D4AA34 /* mytar.h */,
+				84144D29203B9B0F00D4AA34 /* mem.h */,
+				84144D2A203B9B0F00D4AA34 /* mem.c */,
+				84144D2C203B9B8500D4AA34 /* Makefile */,
+				84144D2E203B9D3100D4AA34 /* README */,
 			);
 			path = asgn4;
 			sourceTree = "<group>";
@@ -119,7 +131,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				84144D22203B943D00D4AA34 /* main.c in Sources */,
+				84144D2D203B9B8500D4AA34 /* Makefile in Sources */,
+				84144D22203B943D00D4AA34 /* mytar.c in Sources */,
+				84144D2B203B9B0F00D4AA34 /* mem.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -233,6 +247,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				GCC_C_LANGUAGE_STANDARD = ansi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -241,6 +256,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				GCC_C_LANGUAGE_STANDARD = ansi;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
