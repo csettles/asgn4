@@ -13,8 +13,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <string.h>
+
+#include "mem.h"
 
 void list_archive(int num_paths, char **paths);
 void create_archive(int num_paths, char **paths);
