@@ -14,8 +14,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <unistd.h>
-#include <getopt.h>
+#include <string.h>
 
+void list_archive(int num_paths, char **paths);
+void create_archive(int num_paths, char **paths);
+void extract_archive(int num_paths, char **paths);
 
 #endif /* mytar_h */
