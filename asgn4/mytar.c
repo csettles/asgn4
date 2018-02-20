@@ -15,10 +15,25 @@
  *
  *===========================================================================*/
 
-#include <stdio.h>
+#include "mytar.h"
 
-int main(int argc, const char * argv[]) {
-	// insert code here...
-	printf("Hello, World!\n");
-	return 0;
+int main(int argc, char *argv[]) {
+	int opt;
+	
+	while ((opt = getopt(argc, argv, "ctxvS")) != -1) {
+		switch (opt) {
+			case 'c':
+				printf("chose c\n");
+				break;
+			case 't':
+				printf("chose t\n");
+			case '?':
+				if (optopt == 'n')
+					fprintf(stderr,
+						"usage: fw [-n num] [ file1 [ file 2 ...] ]\n");
+				return 1;
+			default:
+				exit(EXIT_FAILURE);
+		}
+	}
 }
