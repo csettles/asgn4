@@ -43,11 +43,11 @@ int main(int argc, char *argv[]) {
 	}
 	
 	if (strchr(argv[1], 't')) {
-		list_archive(argc - 2, argv + 2);
+		list_archive(argc - 2, argv + 2, verbose, strict);
 	} else if (strchr(argv[1], 'c')) {
-		create_archive(argc - 2, argv + 2);
+		create_archive(argc - 2, argv + 2, verbose, strict);
 	} else if (strchr(argv[1], 'x')) {
-		extract_archive(argc - 2, argv + 2);
+		extract_archive(argc - 2, argv + 2, verbose, strict);
 	} else {
 		/* no function specified */
 		fprintf(stderr,
@@ -56,20 +56,85 @@ int main(int argc, char *argv[]) {
 	}
 }
 
-void list_archive(int num_paths, char **paths) {
+void list_archive(int num_paths, char **paths, bool v, bool s) {
+	struct passwd pd;
+	array files;
+	int i, j;
 	char *archive = paths[0];
 	
-	if (num_paths == 0) {
+	paths = paths + 1; /* move paths forward */
+	
+	files = get_header(archive, s);
+
+	for (i = 0; i < files->len; i++) {
+		if (num_paths == 0) {
+			print_header(*(files->list[0]), v);
+			continue;
+		}
 		
+		/* if there are paths specified... */
+		for (j = 0; j < num_paths; j++) {
+			/* somehow gotta check if header starts with any paths */;
+		}
 	}
-	return;
+	
+	/* for i in files free file */
+	free(files);
 }
 
-void create_archive(int num_paths, char **paths) {
+void create_archive(int num_paths, char **paths, bool v, bool s) {
 	/* write_header(paths[0]); */
 	return;
 }
 
-void extract_archive(int num_paths, char **paths) {
+void extract_archive(int num_paths, char **paths, bool v, bool s) {
 	return;
+}
+
+void pack_header(int fd, bool s) {
+	/* each header is 400 bytes */
+	tar_header *th;
+	uint8_t buf[400];
+	
+	
+	th = new_header();
+	
+	if (read(fd, buf, 400) < 400) {
+		fprintf(stderr, "malformed header\n");
+		exit(EXIT_FAILURE);
+	}
+	
+	memcpy(&th->mode, buf + 100, 8);
+	memcpy(&th->uid, buf + 108, 8);
+	memcpy(&th->gid, buf + 116, 8);
+	memcpy(&th->size, buf + 124, 12);
+	/* etc... */
+	
+	return;
+}
+
+array get_header(char *path, bool s) {
+	int fd;
+	array headers;
+	
+	headers = new_array(10, sizeof(struct tar_header));
+	
+	if (!(fd = open(path, O_RDONLY))) {
+		perror(path);
+		exit(EXIT_FAILURE);
+	}
+	
+	/* pack header and add to list */
+	/* move forward at least 112 bytes */
+	/* keep reading headers while not hitting two null blocks */
+	
+	return headers;
+}
+
+void unpack_header(int fd, tar_header th, bool s) {
+	char buf[400];
+	
+	strncpy(buf, (char *)th.name, 100);
+	strncpy(buf + 100, (char *)th.mode, 8);
+	/* etc... */
 }

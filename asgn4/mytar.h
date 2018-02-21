@@ -14,11 +14,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
 
-#include "mem.h"
+#include "array_list.h"
 
-void list_archive(int num_paths, char **paths);
-void create_archive(int num_paths, char **paths);
-void extract_archive(int num_paths, char **paths);
+void list_archive(int num_paths, char **paths, bool v, bool s);
+void create_archive(int num_paths, char **paths, bool v, bool s);
+void extract_archive(int num_paths, char **paths, bool v, bool s);
+
+array get_header(char *path, bool s);
+void pack_header(int fd, bool s);
+void unpack_header(int fd, tar_header th, bool s);
 
 #endif /* mytar_h */
