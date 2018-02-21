@@ -71,5 +71,41 @@ tar_header *new_header(void) {
 }
 
 void print_header(tar_header *th, bool v) {
-	/* print differently based on verbosity */;
+	int file_mode, gid, uid, size;
+	struct passwd pd;
+	struct group gd;
+	
+	if (!v) {
+		printf("%s/%s\n", th->prefix, th->name);
+		return;
+	}
+	
+	/* these might fail? */
+	uid = (int)strtol((const char *)th->uid, NULL, 10);
+	gid = (int)strtol((const char *)th->gid, NULL, 10);
+	file_mode = (int)strtol((const char *)th->mode, NULL, 8);
+	size = (int)strtol((const char *)th->size, NULL, 8);
+	
+	/* print permissions */
+	printf((th->mode[0] == '1') ? "d" : "-");
+	printf((file_mode & S_IRUSR) ? "r" : "-");
+	printf((file_mode & S_IWUSR) ? "w" : "-");
+	printf((file_mode & S_IXUSR) ? "x" : "-");
+	printf((file_mode & S_IRGRP) ? "r" : "-");
+	printf((file_mode & S_IWGRP) ? "w" : "-");
+	printf((file_mode & S_IXGRP) ? "x" : "-");
+	printf((file_mode & S_IROTH) ? "r" : "-");
+	printf((file_mode & S_IWOTH) ? "w" : "-");
+	printf((file_mode & S_IXOTH) ? "x" : "-");
+	
+	/*print owner/group name */
+	
+	/* print size in bytes */
+	printf("%8d", size);
+	
+	/* print time */
+	
+	/* print file name */
+	
+	printf("\n");
 }

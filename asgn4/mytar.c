@@ -76,9 +76,10 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 		for (j = 0; j < num_paths; j++) {
 			/* somehow gotta check if header starts with any paths */;
 		}
+		
+		free(files->list[0]); /* free file once done */
 	}
 	
-	/* for i in files free file */
 	free(files);
 }
 
