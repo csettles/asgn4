@@ -86,7 +86,6 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 void create_archive(int num_paths, char **paths, bool v, bool s) {
 	/* Used to create archive by reading in paths and generating headers **/ 
 	int i, fd;
-	char *tarCheck;
 	char *archive;
 
 	/* Checks if first argument is a tar file */ 
@@ -122,6 +121,7 @@ void extract_archive(int num_paths, char **paths, bool v, bool s) {
 	int i, fd;
 	array files; 
 	char *archive; 
+	char *curr_path;
 
 	/* Checks if first argument is a tar file */
         if (tar_checker(paths[0]) == 0) {
@@ -140,7 +140,7 @@ void extract_archive(int num_paths, char **paths, bool v, bool s) {
                 unpack_header(*(files->list[0]), v)
         }
 	for (i = 0; i < num_paths; i++) {
-		char* curr_path = paths[i];
+		curr_path = paths[i];
 		/* Go through dir traversal and find path */  
 	}
 	return;
