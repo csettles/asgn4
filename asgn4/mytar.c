@@ -84,12 +84,77 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 }
 
 void create_archive(int num_paths, char **paths, bool v, bool s) {
-	/* write_header(paths[0]); */
+	/* Used to create archive by reading in paths and generating headers **/ 
+	int i, fd;
+	char *tarCheck;
+	char *archive;
+
+	/* Checks if first argument is a tar file */ 
+	if (tar_checker(paths[0]) == 0) {
+                archive = paths[0];
+        } else {
+                fprintf(stderr, "usage: mytar [ctxvS]f tarfile [ path [ ... ] ]\n");
+                exit(EXIT_FAILURE);
+        }
+		
+	paths = paths + 1; /* moves to path list */ 
+
+	/* If not given any paths, exit? */ 
+	if (1 == num_paths) {
+		fprintf(stderr, "usage: mytar [ctxvS]f tarfile [ path [ ... ] ]\n");
+		exit(EXIT_FAILURE); 
+	}
+	
+	/* If made to here, correctly found tar file and found at least one path input */
+	for (i = 0; i < num_paths; i++) {
+		if (!(fd = open(path[i], O_RDONLY))) {
+                	perror(path);
+                	exit(EXIT_FAILURE);
+        	}
+		/* Going to need to handle traversal here if directory to get all children */ 
+		pack_header(fd, s); 
+	}
 	return;
 }
 
 void extract_archive(int num_paths, char **paths, bool v, bool s) {
+	/* Used to extract from an archive, recreating the files correctly */
+	int i, fd;
+	array files; 
+	char *archive; 
+
+	/* Checks if first argument is a tar file */
+        if (tar_checker(paths[0]) == 0) {
+        	archive = paths[0];
+        } else {
+                fprintf(stderr, "usage: mytar [ctxvS]f tarfile [ path [ ... ] ]\n");
+               	exit(EXIT_FAILURE);
+        }
+
+	files = get_header(archive, s);
+
+	paths = paths + 1; /* moves to path list */ 
+
+	/* If not given explicit paths, take care of entire archive */ 
+	if (1 == num_paths) {
+                unpack_header(*(files->list[0]), v)
+        }
+	for (i = 0; i < num_paths; i++) {
+		char* curr_path = paths[i];
+		/* Go through dir traversal and find path */  
+	}
 	return;
+}
+
+int tar_checker(char *path) {
+	/* Used to check if a path is tar file */ 
+	char *tar_check; 
+        if ((tar_check = strchr(path_name, '.')) != NULL) {
+                if (strcmp(tar_check, ".tar") == 0) {
+                        return 0; 
+       		}
+        }
+	return -1; 
 }
 
 void pack_header(int fd, bool s) {
@@ -116,6 +181,7 @@ void pack_header(int fd, bool s) {
 
 array get_header(char *path, bool s) {
 	int fd;
+	struct stat 
 	array headers;
 	
 	headers = new_array(10, sizeof(struct tar_header));
@@ -124,7 +190,8 @@ array get_header(char *path, bool s) {
 		perror(path);
 		exit(EXIT_FAILURE);
 	}
-	
+
+		
 	/* pack header and add to list */
 	/* move forward at least 112 bytes */
 	/* keep reading headers while not hitting two null blocks */

@@ -31,4 +31,6 @@ array get_header(char *path, bool s);
 void pack_header(int fd, bool s);
 void unpack_header(int fd, tar_header th, bool s);
 
+int tar_checker(char *path);
+	 
 #endif /* mytar_h */
