@@ -16,7 +16,7 @@ tree *create_node(char *data, int depth) {
 		t->depth = depth; 
 	}
 	t->child = NULL;
-	t->next = NULL; 	
+	t->sibling = NULL; 	
 	return t;
 }
 
@@ -42,10 +42,10 @@ tree *add_sibling(tree *n, char *data) {
 		
 	/* Add things left to right */ 
 	while ((n->next) != NULL) {
-		n = n->next; 
+		n = n->sibling; 
 	}
 	
-	return (n->next = create_node(data, n->depth)); 
+	return (n->sibling = create_node(data, n->depth)); 
 }
 
 /* DFS like traversing */ 
@@ -67,6 +67,6 @@ void print_tree_helper(tree *n) {
 	while (n != NULL) {
 		printf("%s\n", n->path); 
 		print_tree_helper(n->child); 
-		n = n->next; 
+		n = n->sibling; 
 	}
 }

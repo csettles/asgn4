@@ -11,7 +11,7 @@ typedef struct tree tree;
 struct tree {
 	char *path;
 	struct tree *child;
-	struct tree *next;
+	struct tree *sibling;
 };
 
 tree *create_node(char *data, int depth);
