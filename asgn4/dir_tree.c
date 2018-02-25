@@ -1,11 +1,11 @@
 #include "dir_tree.h"
 
 /*  Creates a tree node */ 
-tree *create_node(char *data, int depth) {
+tree create_node(char *data, int depth) {
 	int string_len; 
 	tree t;
 	
-	t = safe_malloc(sizeof(tree));
+	t = safe_malloc(sizeof(struct tree));
 	
 	string_len = strlen(data); 
 	t->path = safe_malloc((string_len + 1)*sizeof(char)); 
@@ -21,7 +21,7 @@ tree *create_node(char *data, int depth) {
 }
 
 /* Appends a child to a given node */
-tree *add_child(tree *n, char *data) {
+tree add_child(tree n, char *data) {
 	if (n == NULL) {
 		return NULL; 
 	}
@@ -35,13 +35,13 @@ tree *add_child(tree *n, char *data) {
 }
 
 /* Appends a sibling */
-tree *add_sibling(tree *n, char *data) {
+tree add_sibling(tree n, char *data) {
 	if (n == NULL) {
 		return NULL;
 	}
 		
 	/* Add things left to right */ 
-	while ((n->next) != NULL) {
+	while ((n->sibling) != NULL) {
 		n = n->sibling; 
 	}
 	
@@ -50,7 +50,7 @@ tree *add_sibling(tree *n, char *data) {
 
 /* DFS like traversing */ 
 /* First print only prints the single element passed in */
-void print_tree_init(tree *n) {
+void print_tree_init(tree n) {
 	if (n == NULL) {
 		return; 			
 	}
@@ -60,7 +60,7 @@ void print_tree_init(tree *n) {
 }
 
 /* Recursively print all children and their siblings */ 
-void print_tree_helper(tree *n) {
+void print_tree_helper(tree n) {
 	if (n == NULL) {
 		return;
 	}

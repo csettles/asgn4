@@ -108,8 +108,6 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 			
 	paths = paths + 1; /* moves to path list */ 
 
-	write_header(archive, s); 
-	
 	/* If not given any paths, exit? */ 
 	if (1 == num_paths) {
 		fprintf(stderr, "usage: mytar [ctxvS]f tarfile [ path [ ... ] ]\n");
@@ -125,17 +123,14 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 		if (fstat(fd, &sb) == 0) {
 			/* Is regular file */
 			if (S_ISREG(sb.st_mode)) {
-				pack_header(fd, s); 
+				write_header(archive, fd, s); 
 			}
 			/* Is directory */
 			if (S_ISDIR(sb.st_mode)) {
-				handle_dir(paths[i], s); 
+				handle_dir(archive, paths[i], s); 
 			} 
 		}
-		/* Going to need to handle traversal here if directory to get all children */ 
 	}
-
-	write_header(archive, s); 
 	return;
 }
 
@@ -182,7 +177,7 @@ int tar_checker(char *path) {
 	return -1; 
 }
 
-void handle_dir(char *path, bool s) {
+void handle_dir(char *archive, char *path, bool s) {
 	/* For create_archive, when given a directory to archive */
 	DIR *d;
 	struct dirent *dir;
@@ -193,10 +188,10 @@ void handle_dir(char *path, bool s) {
 	
 	/* Opens current directory */
 	chdir(path); 
-	d = opndir("."); 
+	d = opendir("."); 
 	
 	if (d != NULL) {
-		while(dir = readdir(dp)) {
+		while((dir = readdir(d)) != NULL) {
 			curr_name = dir->d_name; 
 			if (!(fd = open(curr_name, O_RDONLY))) {
                 	        perror(curr_name);
@@ -205,11 +200,11 @@ void handle_dir(char *path, bool s) {
 	                if (fstat(fd, &sb) == 0) {
         	                /* Is regular file */
                 	        if (S_ISREG(sb.st_mode)) {
-                        	        pack_header(fd, s);
+                        	        write_header(archive, fd, s);
                        		 }
                         	/* Is directory */
                         	if (S_ISDIR(sb.st_mode)) {
-                                	handle_dir(curr_name, s);
+                                	handle_dir(archive, curr_name, s);
                         	}
 			}
 		}
@@ -260,11 +255,11 @@ array get_header(char *path, bool s) {
 	return headers;
 }
 
-void write_header(char* path, bool s); {
+void write_header(char* archive, int fd,  bool s) {
 	/* Used to write the header to the archive file */ 
 }
 
-void unpack_header(int fd, tar_header th, bool s) {
+void unpack_header(tar_header th, bool s) {
 	char buf[400];
 	
 	strncpy(buf, (char *)th.name, 100);
