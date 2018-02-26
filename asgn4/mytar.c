@@ -97,6 +97,7 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 	int i, fd;
 	struct stat sb; 
 	char *archive;
+	char cwd[2014]; 
 
 	/* Checks if first argument is a tar file */ 
 	if (tar_checker(paths[0]) == 0) {
@@ -113,7 +114,7 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 		fprintf(stderr, "usage: mytar [ctxvS]f tarfile [ path [ ... ] ]\n");
 		exit(EXIT_FAILURE); 
 	}
-   	
+	
 	/* If made to here, correctly found tar file and found at least one path input */
 	for (i = 0; i < num_paths; i++) {
 		if (!(fd = open(paths[i], O_RDONLY))) {
@@ -123,7 +124,7 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 		if (fstat(fd, &sb) == 0) {
 			/* Is regular file */
 			if (S_ISREG(sb.st_mode)) {
-				write_header(archive, fd, s); 
+				write_header(archive, paths[i], s); 
 			}
 			/* Is directory */
 			if (S_ISDIR(sb.st_mode)) {
@@ -192,7 +193,10 @@ void handle_dir(char *archive, char *path, bool s) {
 	
 	if (d != NULL) {
 		while((dir = readdir(d)) != NULL) {
-			curr_name = dir->d_name; 
+			curr_name = dir->d_name;
+			if (!strcmp(curr_name,".") || !strcmp(curr_name,"..")) {
+				continue;
+			}
 			if (!(fd = open(curr_name, O_RDONLY))) {
                 	        perror(curr_name);
         	                exit(EXIT_FAILURE);
@@ -200,7 +204,7 @@ void handle_dir(char *archive, char *path, bool s) {
 	                if (fstat(fd, &sb) == 0) {
         	                /* Is regular file */
                 	        if (S_ISREG(sb.st_mode)) {
-                        	        write_header(archive, fd, s);
+                        	        write_header(archive, curr_name, s);
                        		 }
                         	/* Is directory */
                         	if (S_ISDIR(sb.st_mode)) {
@@ -255,8 +259,9 @@ array get_header(char *path, bool s) {
 	return headers;
 }
 
-void write_header(char* archive, int fd,  bool s) {
+void write_header(char* archive, char* path,  bool s) {
 	/* Used to write the header to the archive file */ 
+        printf("%s\n", path); 
 }
 
 void unpack_header(tar_header th, bool s) {

@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <pwd.h>
 #include <dirent.h>
+#include <fcntl.h>
 
 #include "array_list.h"
 
@@ -29,7 +30,7 @@ void create_archive(int num_paths, char **paths, bool v, bool s);
 void extract_archive(int num_paths, char **paths, bool v, bool s);
 
 array get_header(char *path, bool s);
-void write_header(char *archive, int fd, bool s); 
+void write_header(char *archive, char *path, bool s); 
 void pack_header(int fd, bool s);
 void unpack_header(tar_header th, bool s);
 
