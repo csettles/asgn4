@@ -34,8 +34,12 @@ tree get_header(char *path, bool s);
 void write_header(char *archive, char *path, bool s); 
 void pack_header(int fd, bool s);
 void unpack_header(tar_header th, bool s);
+bool valid_header(tar_header th);
 
-int tar_checker(char *path);
-void handle_dir(char *archive, char *path, bool s); 
+bool is_archive(char *path);
+void handle_dir(char *archive, char *path, bool s);
+int calc_chksum(tar_header th);
+
+int sum_of_string(const uint8_t *s, int length);
 
 #endif /* mytar_h */
