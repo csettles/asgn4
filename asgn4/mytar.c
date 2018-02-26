@@ -95,12 +95,11 @@ void extract_archive(int num_paths, char **paths, bool v, bool s) {
 void pack_header(int fd, bool s) {
 	/* each header is 400 bytes */
 	tar_header *th;
-	uint8_t buf[400];
-	
+	uint8_t buf[512]; /* the last 12 bytes are data, not header */
 	
 	th = new_header();
 	
-	if (read(fd, buf, 400) < 400) {
+	if (read(fd, buf, 512) < 512) {
 		fprintf(stderr, "malformed header\n");
 		exit(EXIT_FAILURE);
 	}
