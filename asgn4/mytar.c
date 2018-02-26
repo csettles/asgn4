@@ -54,21 +54,30 @@ int main(int argc, char *argv[]) {
 			"usage: mytar [ctxvS]f tarfile [ path [ ... ] ]\n");
 		exit(EXIT_FAILURE);
 	}
+	return 0;
 }
 
 void list_archive(int num_paths, char **paths, bool v, bool s) {
-	struct passwd pd;
-	array files;
+	/* struct passwd pd; */
+	tree files;
 	int i, j;
-	char *archive = paths[0];
+	char *archive;
+
+	/* Checks if first argument is a tar file */
+        if (tar_checker(paths[0]) == 0) {
+                archive = paths[0];
+        } else {
+                fprintf(stderr, "usage: mytar [ctxvS]f tarfile [ path [ ... ] ]\n");
+                exit(EXIT_FAILURE);
+        }
 	
 	paths = paths + 1; /* move paths forward */
 	
 	files = get_header(archive, s);
 
-	for (i = 0; i < files->len; i++) {
-		if (num_paths == 0) {
-			print_header(*(files->list[0]), v);
+	for (i = 0; i < num_paths; i++) {
+		if (num_paths == 1) {
+			/* Print header */ 
 			continue;
 		}
 		
@@ -77,19 +86,135 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 			/* somehow gotta check if header starts with any paths */;
 		}
 		
-		free(files->list[0]); /* free file once done */
+	        printf("%s\n", files->path);/* free file once done */
 	}
 	
-	free(files);
+	/* Need to free tree */	
 }
 
 void create_archive(int num_paths, char **paths, bool v, bool s) {
-	/* write_header(paths[0]); */
+	/* Used to create archive by reading in paths and generating headers **/ 
+	int i, fd;
+	struct stat sb; 
+	char *archive;
+
+	/* Checks if first argument is a tar file */ 
+	if (tar_checker(paths[0]) == 0) {
+                archive = paths[0];
+        } else {
+                fprintf(stderr, "usage: mytar [ctxvS]f tarfile [ path [ ... ] ]\n");
+                exit(EXIT_FAILURE);
+        }
+			
+	paths = paths + 1; /* moves to path list */ 
+
+	/* If not given any paths, exit? */ 
+	if (1 == num_paths) {
+		fprintf(stderr, "usage: mytar [ctxvS]f tarfile [ path [ ... ] ]\n");
+		exit(EXIT_FAILURE); 
+	}
+	
+	/* If made to here, correctly found tar file and found at least one path input */
+	for (i = 0; i < num_paths; i++) {
+		if (!(fd = open(paths[i], O_RDONLY))) {
+                	perror(paths[i]);
+                	exit(EXIT_FAILURE);
+        	}
+		if (fstat(fd, &sb) == 0) {
+			/* Is regular file */
+			if (S_ISREG(sb.st_mode)) {
+				write_header(archive, paths[i], s); 
+			}
+			/* Is directory */
+			if (S_ISDIR(sb.st_mode)) {
+				handle_dir(archive, paths[i], s); 
+			} 
+		}
+	}
 	return;
 }
 
 void extract_archive(int num_paths, char **paths, bool v, bool s) {
+	/* Used to extract from an archive, recreating the files correctly */
+	int i, fd;
+	tree files; 
+	char *archive; 
+
+	/* Checks if first argument is a tar file */
+        if (tar_checker(paths[0]) == 0) {
+        	archive = paths[0];
+        } else {
+                fprintf(stderr, "usage: mytar [ctxvS]f tarfile [ path [ ... ] ]\n");
+               	exit(EXIT_FAILURE);
+        }
+
+	files = get_header(archive, s);
+
+	paths = paths + 1; /* moves to path list */ 
+
+	/* If not given explicit paths, take care of entire archive */ 
+	if (1 == num_paths) {
+        	printf("%s\n", files->path);	
+		/* Unpack entire tree */
+	}
+	for (i = 0; i < num_paths; i++) {
+		if (!(fd = open(paths[i], O_RDONLY))) {
+                        perror(paths[i]);
+                        exit(EXIT_FAILURE);
+                }
+		/* Go through dir traversal and find path */  
+	}
 	return;
+}
+
+int tar_checker(char *path) {
+	/* Used to check if a path is tar file */ 
+	char *tar_check; 
+        if ((tar_check = strchr(path, '.')) != NULL) {
+                if (strcmp(tar_check, ".tar") == 0) {
+                        return 0; 
+       		}
+        }
+	return -1; 
+}
+
+void handle_dir(char *archive, char *path, bool s) {
+	/* For create_archive, when given a directory to archive */
+	DIR *d;
+	struct dirent *dir;
+	struct stat sb; 
+
+	char *curr_name; 
+	int fd;
+	
+	/* Opens current directory */
+	chdir(path); 
+	d = opendir("."); 
+	
+	if (d != NULL) {
+		while((dir = readdir(d)) != NULL) {
+			curr_name = dir->d_name;
+			if (!strcmp(curr_name,".") || !strcmp(curr_name,"..")) {
+				continue;
+			}
+			if (!(fd = open(curr_name, O_RDONLY))) {
+                	        perror(curr_name);
+        	                exit(EXIT_FAILURE);
+	                }
+	                if (fstat(fd, &sb) == 0) {
+        	                /* Is regular file */
+                	        if (S_ISREG(sb.st_mode)) {
+                        	        write_header(archive, curr_name, s);
+                       		 }
+                        	/* Is directory */
+                        	if (S_ISDIR(sb.st_mode)) {
+                                	handle_dir(archive, curr_name, s);
+                        	}
+			}
+		}
+	}
+
+	chdir("..");	
 }
 
 void pack_header(int fd, bool s) {
@@ -113,17 +238,19 @@ void pack_header(int fd, bool s) {
 	return;
 }
 
-array get_header(char *path, bool s) {
+tree get_header(char *path, bool s) {
+	/* This needs to build entire directory tree, and then we can traverse it */ 
 	int fd;
-	array headers;
+	struct stat; 
+	tree headers = NULL;
 	
-	headers = new_array(10, sizeof(struct tar_header));
 	
 	if (!(fd = open(path, O_RDONLY))) {
 		perror(path);
 		exit(EXIT_FAILURE);
 	}
-	
+
+		
 	/* pack header and add to list */
 	/* move forward at least 112 bytes */
 	/* keep reading headers while not hitting two null blocks */
@@ -131,7 +258,12 @@ array get_header(char *path, bool s) {
 	return headers;
 }
 
-void unpack_header(int fd, tar_header th, bool s) {
+void write_header(char* archive, char* path,  bool s) {
+	/* Used to write the header to the archive file */ 
+        printf("%s\n", path); 
+}
+
+void unpack_header(tar_header th, bool s) {
 	char buf[400];
 	
 	strncpy(buf, (char *)th.name, 100);

@@ -72,8 +72,8 @@ tar_header *new_header(void) {
 
 void print_header(tar_header *th, bool v) {
 	int file_mode, gid, uid, size;
-	struct passwd pd;
-	struct group gd;
+	/* struct passwd pd;
+	struct group gd; */
 	
 	if (!v) {
 		printf("%s/%s\n", th->prefix, th->name);
@@ -99,6 +99,7 @@ void print_header(tar_header *th, bool v) {
 	printf((file_mode & S_IXOTH) ? "x" : "-");
 	
 	/*print owner/group name */
+	printf("%d, %d \n", uid, gid);
 	
 	/* print size in bytes */
 	printf("%8d", size);

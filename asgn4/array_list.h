@@ -14,6 +14,8 @@
 #include <pwd.h>
 #include <grp.h>
 #include "mem.h"
+#include <stdint.h>
+#include <sys/stat.h>
 
 typedef struct tar_header tar_header;
 struct tar_header {
