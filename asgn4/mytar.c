@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
 
 void list_archive(int num_paths, char **paths, bool v, bool s) {
 	/* struct passwd pd; */
-	array files;
+	tree files;
 	int i, j;
 	char *archive;
 
@@ -75,9 +75,9 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 	
 	files = get_header(archive, s);
 
-	for (i = 0; i < files->len; i++) {
+	for (i = 0; i < num_paths; i++) {
 		if (num_paths == 1) {
-			print_header((files->list[0]), v);
+			/* Print header */ 
 			continue;
 		}
 		
@@ -86,10 +86,10 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 			/* somehow gotta check if header starts with any paths */;
 		}
 		
-		free(files->list[0]); /* free file once done */
+	        printf("%s\n", files->path);/* free file once done */
 	}
 	
-	free(files);
+	/* Need to free tree */	
 }
 
 void create_archive(int num_paths, char **paths, bool v, bool s) {
@@ -97,7 +97,6 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 	int i, fd;
 	struct stat sb; 
 	char *archive;
-	char cwd[2014]; 
 
 	/* Checks if first argument is a tar file */ 
 	if (tar_checker(paths[0]) == 0) {
@@ -138,7 +137,7 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 void extract_archive(int num_paths, char **paths, bool v, bool s) {
 	/* Used to extract from an archive, recreating the files correctly */
 	int i, fd;
-	array files; 
+	tree files; 
 	char *archive; 
 
 	/* Checks if first argument is a tar file */
@@ -155,8 +154,9 @@ void extract_archive(int num_paths, char **paths, bool v, bool s) {
 
 	/* If not given explicit paths, take care of entire archive */ 
 	if (1 == num_paths) {
-                unpack_header(*(files->list[0]), v);
-        }
+        	printf("%s\n", files->path);	
+		/* Unpack entire tree */
+	}
 	for (i = 0; i < num_paths; i++) {
 		if (!(fd = open(paths[i], O_RDONLY))) {
                         perror(paths[i]);
@@ -239,12 +239,12 @@ void pack_header(int fd, bool s) {
 	return;
 }
 
-array get_header(char *path, bool s) {
+tree get_header(char *path, bool s) {
+	/* This needs to build entire directory tree, and then we can traverse it */ 
 	int fd;
 	struct stat; 
-	array headers;
+	tree headers = NULL;
 	
-	headers = new_array(10, sizeof(struct tar_header));
 	
 	if (!(fd = open(path, O_RDONLY))) {
 		perror(path);
