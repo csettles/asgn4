@@ -71,20 +71,25 @@ tar_header *new_header(void) {
 }
 
 void print_header(tar_header *th, bool v) {
-	int file_mode, gid, uid, size;
-	/* struct passwd pd;
-	struct group gd; */
+	int file_mode, size;
+	uid_t uid;
+	gid_t gid;
+	struct passwd *pd;
+	struct group *gd;
+	time_t mtime;
+	char time[16];
 	
 	if (!v) {
-		printf("%s/%s\n", th->prefix, th->name);
+		print_file(th);
 		return;
 	}
 	
-	/* these might fail? */
+	/* these won't fail because max is 2^8 */
 	uid = (int)strtol((const char *)th->uid, NULL, 10);
 	gid = (int)strtol((const char *)th->gid, NULL, 10);
 	file_mode = (int)strtol((const char *)th->mode, NULL, 8);
 	size = (int)strtol((const char *)th->size, NULL, 8);
+	mtime = strtol((const char *)th->mtime, NULL, 10);
 	
 	/* print permissions */
 	printf((th->mode[0] == '1') ? "d" : "-");
@@ -99,14 +104,42 @@ void print_header(tar_header *th, bool v) {
 	printf((file_mode & S_IXOTH) ? "x" : "-");
 	
 	/*print owner/group name */
-	printf("%d, %d \n", uid, gid);
+	if (!(pd = getpwuid(uid)) || !(gd = getgrgid(gid))) {
+		fprintf(stderr, "owner not found\n");
+		exit(EXIT_FAILURE);
+	}
+	
+	if (strlen(pd->pw_name) >= 17) {
+		printf(" %17s", pd->pw_name);
+	} else {
+		printf(" %-*s/%-*s", (int)strlen(pd->pw_name),
+		       pd->pw_name,
+		       17 - 1 - (int)strlen(pd->pw_name),
+		       gd->gr_name);
+	}
 	
 	/* print size in bytes */
-	printf("%8d", size);
+	printf(" %8d", size);
 	
 	/* print time */
+	/* assuming th->mtime is a timestamp */
+	if (strftime(time, 16, "%Y-%m-%d %H:%M", localtime(&mtime)) == 0) {
+		fprintf(stderr, "unrecognized time\n");
+		exit(EXIT_FAILURE);
+	}
+	printf(" %16s", time);
 	
 	/* print file name */
+	printf(" ");
+	print_file(th);
 	
 	printf("\n");
+}
+
+void print_file(tar_header *th) {
+	if (strlen(th->prefix) > 0) {
+		printf("%s/%s", th->prefix, th->name);
+	} else {
+		printf("%s", th->name);
+	}
 }

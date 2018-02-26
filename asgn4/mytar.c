@@ -218,7 +218,7 @@ void handle_dir(char *archive, char *path, bool s) {
 }
 
 void pack_header(int fd, bool s) {
-	/* each header is 400 bytes */
+	/* each header is 500 bytes */
 	tar_header *th;
 	uint8_t buf[512]; /* the last 12 bytes are data, not header */
 	

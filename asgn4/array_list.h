@@ -13,9 +13,11 @@
 #include <string.h>
 #include <pwd.h>
 #include <grp.h>
-#include "mem.h"
 #include <stdint.h>
 #include <sys/stat.h>
+#include <time.h>
+
+#include "mem.h"
 
 typedef struct tar_header tar_header;
 struct tar_header {
@@ -49,7 +51,8 @@ array new_array(int capacity, size_t elem_size);
 void array_append(array a, tar_header *th);
 void print_array(array a);
 
-struct tar_header *new_header(void);
+tar_header *new_header(void);
 void print_header(tar_header *th, bool v);
+void print_file(tar_header *th);
 
 #endif /* array_list_h */
