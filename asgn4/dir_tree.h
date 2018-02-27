@@ -32,12 +32,11 @@ typedef struct tree *tree;
 struct tree {
 	char *file_name; 
 	tar_header th;
-	int is_dir; /* 1 for directory, 0 for file  */ 
 	struct tree *child;
 	struct tree *sibling;
 };
 
-tree create_node(tar_header data, int depth);
+tree create_node(tar_header data);
 tree add_child(tree n, char *data);
 tree add_sibling(tree n, char *data);
 

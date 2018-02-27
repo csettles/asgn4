@@ -7,7 +7,7 @@
  @param depth the depth of the tree
  @return the newly created directory tree
  */
-tree create_node(tar_header data, int dir_bool) {
+tree create_node(tar_header data) {
 	int string_len; 
 	tree t;
 	
@@ -19,7 +19,6 @@ tree create_node(tar_header data, int dir_bool) {
 		t->file_name = NULL; 
 	}		
 	t->th = data;
-	t->is_dir = dir_bool; 
 	t->child = NULL;
 	t->sibling = NULL; 	
 	return t;
@@ -54,16 +53,16 @@ void free_tree(tree n) {
  @param data the file name
  @return the newly added directory tree node
  */
-tree add_child(tree n, char *data, int dir_bool) {
+tree add_child(tree n, char *data) {
 	if (n == NULL) {
 		return NULL; 
 	}
 	
 	/* If the child already exists, need to add as sibling to child*/ 
 	if ((n->child) != NULL) {
-		return add_sibling(n->child, data, dir_bool);
+		return add_sibling(n->child, data);
 	} else {
-		return (n->child = create_node(data, dir_bool)); 
+		return (n->child = create_node(data)); 
 	}
 }
 
@@ -74,7 +73,7 @@ tree add_child(tree n, char *data, int dir_bool) {
  @param data the name of the directory or file
  @return the newly created directory tree
  */
-tree add_sibling(tree n, char *data, int dir_bool) {
+tree add_sibling(tree n, char *data) {
 	if (n == NULL) {
 		return NULL;
 	}
@@ -84,7 +83,7 @@ tree add_sibling(tree n, char *data, int dir_bool) {
 		n = n->sibling; 
 	}
 	
-	return (n->sibling = create_node(data, dir_bool)); 
+	return (n->sibling = create_node(data)); 
 }
 
 /**
@@ -152,7 +151,6 @@ tree build_tree(tree root, char* curr_path, tar_header *th) {
 		if (root->file_name == NULL) {
 			root->data = th;
 			root->curr_name = *path_component;
-			root->is_dir = 1; 
 		}
 	}
 	/* If more things, must be a sub directory */ 
@@ -164,7 +162,7 @@ tree build_tree(tree root, char* curr_path, tar_header *th) {
 					/* Found the correct path */ 
 					path_components++; 
 					if (is_child(root, path_components) != 0) {
-						add_child(root, path_components, 0); 
+						add_child(root, path_components); 
 						root = root->child; 
 						while(strcmp(root->file_name, path_components) != 0) {
 							root = root->sibling; 
@@ -182,7 +180,7 @@ tree build_tree(tree root, char* curr_path, tar_header *th) {
 				}	
 			/* Got to end of subdirectory list */ 
 			} else {
-				root = create_node(th, 0); 
+				root = create_node(th); 
 			}
 		}
 	}
