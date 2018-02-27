@@ -74,13 +74,12 @@ int main(int argc, char *argv[]) {
 void list_archive(int num_paths, char **paths, bool v, bool s) {
 	/* struct passwd pd; */
 	tree files;
+	tree temp_files; 
 	int i, j;
-	int archive;
+	char *archive;
+	char **path_components; 	
 	
-	if ((archive = open(paths[0], O_RDONLY))) {
-		perror(paths[0]);
-		exit(EXIT_FAILURE);
-	}
+	archive = paths[0];
 	paths += 1; /* move paths forward */
 	num_paths -= 1;
 	
@@ -88,7 +87,7 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 
 	for (i = 0; i < num_paths; i++) {
 		if (num_paths == 1) {
-			/* Print header */ 
+			/* Print header for everything */ 
 			continue;
 		}
 		
