@@ -7,18 +7,13 @@
  @param depth the depth of the tree
  @return the newly created directory tree
  */
-tree create_node(tar_header data) {
-	int string_len; 
+tree create_node(char *path, tar_header *data) {
 	tree t;
 	
 	t = safe_malloc(sizeof(struct tree));
 	
-	if (data != NULL) {
-		t->file_name = data.name; 
-	} else {
-		t->file_name = NULL; 
-	}		
-	t->th = data;
+	t->file_name = path; 
+	t->th = *data;
 	t->child = NULL;
 	t->sibling = NULL; 	
 	return t;
@@ -53,16 +48,16 @@ void free_tree(tree n) {
  @param data the file name
  @return the newly added directory tree node
  */
-tree add_child(tree n, char *data) {
+tree add_child(tree n, char *path, tar_header *th) {
 	if (n == NULL) {
 		return NULL; 
 	}
 	
 	/* If the child already exists, need to add as sibling to child*/ 
 	if ((n->child) != NULL) {
-		return add_sibling(n->child, data);
+		return add_sibling(n->child, path, th);
 	} else {
-		return (n->child = create_node(data)); 
+		return (n->child = create_node(path, th)); 
 	}
 }
 
@@ -73,7 +68,7 @@ tree add_child(tree n, char *data) {
  @param data the name of the directory or file
  @return the newly created directory tree
  */
-tree add_sibling(tree n, char *data) {
+tree add_sibling(tree n, char *path, tar_header *th) {
 	if (n == NULL) {
 		return NULL;
 	}
@@ -83,7 +78,7 @@ tree add_sibling(tree n, char *data) {
 		n = n->sibling; 
 	}
 	
-	return (n->sibling = create_node(data)); 
+	return (n->sibling = create_node(path, th)); 
 }
 
 /**
@@ -138,7 +133,7 @@ tar_header *new_header(void) {
 }
 
 /* Used as a helper to build directory tree when getting headers */ 
-tree build_tree(tree root, char* curr_path, tar_header *th) {
+tree build_tree(tree root, char *curr_path, tar_header th) {
 	char **path_components;
 	int path_size; 
 
@@ -149,8 +144,8 @@ tree build_tree(tree root, char* curr_path, tar_header *th) {
 	/* One thing, either top of the directory tree or file */ 
 	if (path_size == 1) {
 		if (root->file_name == NULL) {
-			root->data = th;
-			root->curr_name = *path_component;
+			root->th = th;
+			root->file_name = *path_components;
 		}
 	}
 	/* If more things, must be a sub directory */ 
@@ -158,19 +153,19 @@ tree build_tree(tree root, char* curr_path, tar_header *th) {
 		while(path_components) {
 			if (root != NULL) {
 				/* Right subdirectory */
-				if (strcmp(root->file_name, path_components) == 0) {
+				if (strcmp(root->file_name, *path_components) == 0) {
 					/* Found the correct path */ 
 					path_components++; 
-					if (is_child(root, path_components) != 0) {
-						add_child(root, path_components); 
+					if (is_child(root, *path_components) != 0) {
+						add_child(root, *path_components, &th); 
 						root = root->child; 
-						while(strcmp(root->file_name, path_components) != 0) {
+						while(strcmp(root->file_name, *path_components) != 0) {
 							root = root->sibling; 
 						} 
 					/* Didn't find correct path */
 					} else {
 						root = root->child;
-						while(strcmp(root->file_name, path_component) != 0) {
+						while(strcmp(root->file_name, *path_components) != 0) {
 							root = root->sibling; 
 						}
 					}
@@ -180,7 +175,7 @@ tree build_tree(tree root, char* curr_path, tar_header *th) {
 				}	
 			/* Got to end of subdirectory list */ 
 			} else {
-				root = create_node(th); 
+				root = create_node(*path_components, &th); 
 			}
 		}
 	}
@@ -206,7 +201,7 @@ char **split_path(char *curr_path) {
 	char *curr_word = strtok(curr_path, "/"); 
 	while(curr_word) {
 		path_parts = safe_realloc(path_parts, sizeof(char*) * ++n_words); 
-		res[n_words-1] = curr_word; 
+		path_parts[n_words-1] = curr_word; 
 		curr_word = strtok(NULL, "/"); 
 	}
 	
@@ -218,7 +213,7 @@ char **split_path(char *curr_path) {
 /* Gets length of path */ 
 int path_length(char **path_components) {
 	int i, total; 
-	for (i = total = 0; a[i] != NULL; i++) {
+	for (i = total = 0; path_components[i] != NULL; i++) {
 		total += 1; 
 	}
 	return total; 
@@ -291,7 +286,7 @@ void print_header(tar_header *th, bool v) {
 }
 
 void print_file(tar_header *th) {
-	if (strlen(th->prefix) > 0) {
+	if (strlen((const char *)th->prefix) > 0) {
 		printf("%s/%s", th->prefix, th->name);
 	} else {
 		printf("%s", th->name);

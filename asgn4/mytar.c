@@ -76,17 +76,14 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 	tree files;
 	tree temp_files; 
 	int i, j;
-	int archive;
+	char *archive;
 	char **path_components; 	
 	
-	if ((archive = open(paths[0], O_RDONLY))) {
-		perror(paths[0]);
-		exit(EXIT_FAILURE);
-	}
+	archive = paths[0];
 	paths += 1; /* move paths forward */
 	num_paths -= 1;
 	
-	files = get_headers(archive, s);
+	files = get_header(archive, s);
 
 	for (i = 0; i < num_paths; i++) {
 		if (num_paths == 1) {
@@ -103,7 +100,7 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 				/* go through current layer */ 
 				while(temp_files->sibling != NULL) {
 					/* If the path matches, go down a layer */
-					if (strcmp(temp_files->file_name,path_components) == 0) {
+					if (strcmp(temp_files->file_name,*path_components) == 0) {
 						temp_files = temp_files->child; 
 						path_components++; 
 						break; 
@@ -113,9 +110,7 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 				}
 			} 
 			/* temp_files should now be at file */ 
-		}
-		
-	        printf("%s\n", files->path);/* free file once done */
+		}	
 	}
 	
 	/* Need to free tree */	
@@ -170,7 +165,7 @@ void extract_archive(int num_paths, char **paths, bool v, bool s) {
 
 	/* If not given explicit paths, take care of entire archive */ 
 	if (1 == num_paths) {
-        	printf("%s\n", files->path);	
+        	printf("%s\n", files->file_name);	
 		/* Unpack entire tree */
 	}
 	for (i = 0; i < num_paths; i++) {
@@ -275,17 +270,19 @@ tree get_header(char *path, bool s) {
 	unsigned char buffer_header[500]; 
 	size_t bytes_read = 500; /* Might want to change this */
 	struct stat; 
-	tree headers = create_node(NULL, 0);
+	tree headers;
 	
 	if (!(fd = open(path, O_RDONLY))) {
 		perror(path);
 		exit(EXIT_FAILURE);
 	}
 	
-	while ((bytesread = read(fd, buffer_header, 500)) > 0) {
-		tar_header curr_header = new_header(); /* make the header */
-		curr_path = curr_header.name; 
-		headers = build_tree(headers, curr_path, curr_header);  	
+	while ((bytes_read = read(fd, buffer_header, 500)) > 0) {
+		/*tar_header curr_header = new_header(); make the header */
+		tar_header tarh;  
+		curr_path = NULL; 
+		headers = build_tree(headers, curr_path, tarh);  	
+		
 	}
 
 	/* pack header and add to list */
@@ -346,6 +343,6 @@ void unpack_header(tar_header th, bool s) {
 	
 	strncpy(buf, (char *)th.name, 100);
 	strncpy(buf + 100, (char *)th.mode, 8);
-	strncpy(buf)
+	/*strncpy(buf)*/
 	/* etc... */
 }
