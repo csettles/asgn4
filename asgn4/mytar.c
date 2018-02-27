@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
 		strict = true;
 	}
 	
-	if (!is_archive(argv[2]) && () {
+	if (!is_archive(argv[2])) {
 		fprintf(stderr, "%s: improper tar file\n", argv[2]);
 		exit(EXIT_FAILURE);
 	}
@@ -88,7 +88,7 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 
 	for (i = 0; i < num_paths; i++) {
 		if (num_paths == 1) {
-			/* Print header */ 
+			/* Print header for everything */ 
 			continue;
 		}
 		
@@ -253,16 +253,23 @@ void pack_header(int fd, bool s) {
 tree get_header(char *path, bool s) {
 	/* This needs to build entire directory tree, and then we can traverse it */ 
 	int fd;
+	char *curr_path; 
+	unsigned char buffer_header[500]; 
+	size_t bytes_read = 500; /* Might want to change this */
 	struct stat; 
-	tree headers = NULL;
-	
+	tree headers = create_node(NULL, 0);
 	
 	if (!(fd = open(path, O_RDONLY))) {
 		perror(path);
 		exit(EXIT_FAILURE);
 	}
 	
-		
+	while ((bytesread = read(fd, buffer_header, 500)) > 0) {
+		tar_header curr_header = new_header(); /* make the header */
+		curr_path = curr_header.name; 
+		headers = build_tree(headers, curr_path, curr_header);  	
+	}
+
 	/* pack header and add to list */
 	/* move forward at least 12 bytes */
 	/* keep reading headers while not hitting two null blocks */

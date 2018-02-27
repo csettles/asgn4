@@ -30,8 +30,9 @@ struct tar_header {
 
 typedef struct tree *tree;
 struct tree {
+	char *file_name; 
 	tar_header th;
-	int depth;
+	int is_dir; /* 1 for directory, 0 for file  */ 
 	struct tree *child;
 	struct tree *sibling;
 };
@@ -39,6 +40,11 @@ struct tree {
 tree create_node(tar_header data, int depth);
 tree add_child(tree n, char *data);
 tree add_sibling(tree n, char *data);
+
+tree build_tree(tree root, char *curr_path, tar_header *th); 
+int is_child(tree root, char *path);
+int path_length(char **path_components); 
+char ** split_path(char *curr_path);
 
 void print_tree_init(tree n);
 void print_tree_helper(tree n);

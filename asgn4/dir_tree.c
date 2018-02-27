@@ -7,18 +7,19 @@
  @param depth the depth of the tree
  @return the newly created directory tree
  */
-tree create_node(tar_header data, int depth) {
+tree create_node(tar_header data, int dir_bool) {
 	int string_len; 
 	tree t;
 	
 	t = safe_malloc(sizeof(struct tree));
 	
-	t->th = data;
-	if (depth <= 0) {
-		t->depth = 0; 
+	if (data != NULL) {
+		t->file_name = data.name; 
 	} else {
-		t->depth = depth; 
-	}
+		t->file_name = NULL; 
+	}		
+	t->th = data;
+	t->is_dir = dir_bool; 
 	t->child = NULL;
 	t->sibling = NULL; 	
 	return t;
@@ -53,16 +54,16 @@ void free_tree(tree n) {
  @param data the file name
  @return the newly added directory tree node
  */
-tree add_child(tree n, char *data) {
+tree add_child(tree n, char *data, int dir_bool) {
 	if (n == NULL) {
 		return NULL; 
 	}
 	
 	/* If the child already exists, need to add as sibling to child*/ 
 	if ((n->child) != NULL) {
-		return add_sibling(n->child, data);
+		return add_sibling(n->child, data, dir_bool);
 	} else {
-		return (n->child = create_node(data, n->depth)); 
+		return (n->child = create_node(data, dir_bool)); 
 	}
 }
 
@@ -73,7 +74,7 @@ tree add_child(tree n, char *data) {
  @param data the name of the directory or file
  @return the newly created directory tree
  */
-tree add_sibling(tree n, char *data) {
+tree add_sibling(tree n, char *data, int dir_bool) {
 	if (n == NULL) {
 		return NULL;
 	}
@@ -83,7 +84,7 @@ tree add_sibling(tree n, char *data) {
 		n = n->sibling; 
 	}
 	
-	return (n->sibling = create_node(data, n->depth)); 
+	return (n->sibling = create_node(data, dir_bool)); 
 }
 
 /**
@@ -135,6 +136,94 @@ tar_header *new_header(void) {
 	strncpy((char *)&th->version, "00", 2);
 	
 	return th;
+}
+
+/* Used as a helper to build directory tree when getting headers */ 
+tree build_tree(tree root, char* curr_path, tar_header *th) {
+	char **path_components;
+	int path_size; 
+
+	tree head = root; 
+	path_components = split_path(curr_path); 
+	path_size = path_length(path_components); 
+
+	/* One thing, either top of the directory tree or file */ 
+	if (path_size == 1) {
+		if (root->file_name == NULL) {
+			root->data = th;
+			root->curr_name = *path_component;
+			root->is_dir = 1; 
+		}
+	}
+	/* If more things, must be a sub directory */ 
+	else {
+		while(path_components) {
+			if (root != NULL) {
+				/* Right subdirectory */
+				if (strcmp(root->file_name, path_components) == 0) {
+					/* Found the correct path */ 
+					path_components++; 
+					if (is_child(root, path_components) != 0) {
+						add_child(root, path_components, 0); 
+						root = root->child; 
+						while(strcmp(root->file_name, path_components) != 0) {
+							root = root->sibling; 
+						} 
+					/* Didn't find correct path */
+					} else {
+						root = root->child;
+						while(strcmp(root->file_name, path_component) != 0) {
+							root = root->sibling; 
+						}
+					}
+				/* Wrong subdirectory */
+				} else {
+					root = root->sibling; 
+				}	
+			/* Got to end of subdirectory list */ 
+			} else {
+				root = create_node(th, 0); 
+			}
+		}
+	}
+	return head; 
+}
+
+/* Determines if a path is a child of a node */
+int is_child(tree root, char *path) {
+	root = root->child; 
+	while (root != NULL) {
+		if (strcmp(root->file_name,path) == 0) {
+			return 1;
+		}
+	}
+	return 0; 
+}
+
+/* Splits path and grabs each part */
+char **split_path(char *curr_path) {
+	char **path_parts = NULL;
+	int n_words = 0; 
+	
+	char *curr_word = strtok(curr_path, "/"); 
+	while(curr_word) {
+		path_parts = safe_realloc(path_parts, sizeof(char*) * ++n_words); 
+		res[n_words-1] = curr_word; 
+		curr_word = strtok(NULL, "/"); 
+	}
+	
+	path_parts = safe_realloc(path_parts, sizeof(char*) * (n_words + 1));
+	path_parts[n_words] = 0; 
+	return path_parts; 
+}
+
+/* Gets length of path */ 
+int path_length(char **path_components) {
+	int i, total; 
+	for (i = total = 0; a[i] != NULL; i++) {
+		total += 1; 
+	}
+	return total; 
 }
 
 void print_header(tar_header *th, bool v) {
