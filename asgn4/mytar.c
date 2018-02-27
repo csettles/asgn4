@@ -84,7 +84,7 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 	paths += 1; /* move paths forward */
 	num_paths -= 1;
 	
-	files = get_headers(archive, s);
+	files = build_dir_tree(archive, s);
 
 	for (i = 0; i < num_paths; i++) {
 		if (num_paths == 1) {
@@ -100,6 +100,8 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 	        printf("%s\n", files->th.name);/* free file once done */
 	}
 	
+	close(archive);
+	
 	/* Need to free tree */	
 }
 
@@ -107,10 +109,14 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 	/* Used to create archive by reading in paths and generating headers **/ 
 	int i, fd;
 	struct stat sb;
-	char *archive;
+	int archive;
 	
-	archive = paths[0];
-	paths = paths + 1; /* move paths forward */
+	if ((archive = open(paths[0], O_RDONLY))) {
+		perror(paths[0]);
+		exit(EXIT_FAILURE);
+	}
+	paths++; /* move paths forward */
+	num_paths--;
 
 	/* If not given any paths, exit? */ 
 	if (1 == num_paths) {
@@ -132,10 +138,12 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 			}
 			/* Is directory */
 			if (S_ISDIR(sb.st_mode)) {
-				handle_dir(archive, paths[i], s); 
+				handle_dir(archive, paths[i], s);
 			} 
 		}
 	}
+	
+	close(archive);
 	return;
 }
 
@@ -143,12 +151,16 @@ void extract_archive(int num_paths, char **paths, bool v, bool s) {
 	/* Used to extract from an archive, recreating the files correctly */
 	int i, fd;
 	tree files;
-	char *archive;
+	int archive;
 	
-	archive = paths[0];
-	paths = paths + 1; /* move paths forward */
+	if ((archive = open(paths[0], O_RDONLY))) {
+		perror(paths[0]);
+		exit(EXIT_FAILURE);
+	}
+	paths++; /* move paths forward */
+	num_paths--;
 
-	files = get_header(archive, s);
+	files = build_dir_tree(archive, s);
 
 	/* If not given explicit paths, take care of entire archive */ 
 	if (1 == num_paths) {
@@ -162,6 +174,8 @@ void extract_archive(int num_paths, char **paths, bool v, bool s) {
                 }
 		/* Go through dir traversal and find path */  
 	}
+	
+	close(archive);
 	return;
 }
 
@@ -190,7 +204,7 @@ bool is_archive(char *path) {
  @param path <#path description#>
  @param s <#s description#>
  */
-void handle_dir(char *archive, char *path, bool s) {
+void handle_dir(int archive, char *path, bool s) {
 	/* For create_archive, when given a directory to archive */
 	DIR *d;
 	struct dirent *dir;
@@ -235,8 +249,6 @@ tree build_dir_tree(int archive, bool s) {
 	tar_header th;
 	tree headers = NULL;
 	
-	while ((
-	
 	/* pack header and add to list */
 	/* move forward at least 12 bytes */
 	/* keep reading headers while not hitting two null blocks */
@@ -278,7 +290,7 @@ void unpack_header(tar_header th, bool s) {
 bool valid_header(tar_header th) {
 	unsigned int chksum;
 	
-	chksum = strtol((char *)th.chksum, NULL, 8);
+	chksum = (unsigned int)strtol((char *)th.chksum, NULL, 8);
 	return calc_chksum(th) == chksum;
 }
 
@@ -305,7 +317,7 @@ int calc_chksum(tar_header th) {
 	return sum;
 }
 
-void write_header(char *archive, char *path,  bool s) {
+void write_header(int archive, char *path,  bool s) {
 	/* Used to write the header to the archive file */
 	printf("%s\n", path);
 }
