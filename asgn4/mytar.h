@@ -32,7 +32,7 @@ void extract_archive(int num_paths, char **paths, bool v, bool s);
 
 tree get_header(char *path, bool s);
 void write_header(char *archive, char *path, bool s); 
-void pack_header(int fd, bool s);
+tar_header pack_header(int fd, bool s);
 void unpack_header(tar_header th, bool s);
 bool valid_header(tar_header th);
 

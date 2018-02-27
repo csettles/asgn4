@@ -159,7 +159,13 @@ void print_header(tar_header *th, bool v) {
 	mtime = strtol((const char *)th->mtime, NULL, 10);
 	
 	/* print permissions */
-	printf((th->mode[0] == '1') ? "d" : "-");
+	if (S_ISLNK(file_mode)) {
+		printf("l");
+	} else if (S_ISDIR(file_mode)) {
+		printf("d");
+	} else {
+		printf("-");
+	}
 	printf((file_mode & S_IRUSR) ? "r" : "-");
 	printf((file_mode & S_IWUSR) ? "w" : "-");
 	printf((file_mode & S_IXUSR) ? "x" : "-");
@@ -209,4 +215,8 @@ void print_file(tar_header *th) {
 	} else {
 		printf("%s", th->name);
 	}
+}
+
+bool starts_with(char *pre, char *s) {
+	return strncmp(pre, s, strlen(pre)) == 0;
 }

@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
 		strict = true;
 	}
 	
-	if (!is_archive(argv[2]) && () {
+	if (!is_archive(argv[2])) {
 		fprintf(stderr, "%s: improper tar file\n", argv[2]);
 		exit(EXIT_FAILURE);
 	}
@@ -97,7 +97,7 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 			/* somehow gotta check if header starts with any paths */;
 		}
 		
-	        printf("%s\n", files->path);/* free file once done */
+	        printf("%s\n", files->th.name);/* free file once done */
 	}
 	
 	/* Need to free tree */	
@@ -152,7 +152,7 @@ void extract_archive(int num_paths, char **paths, bool v, bool s) {
 
 	/* If not given explicit paths, take care of entire archive */ 
 	if (1 == num_paths) {
-        	printf("%s\n", files->path);	
+        	printf("%s\n", files->th.name);
 		/* Unpack entire tree */
 	}
 	for (i = 0; i < num_paths; i++) {
@@ -229,8 +229,24 @@ void handle_dir(char *archive, char *path, bool s) {
 	chdir("..");	
 }
 
-void pack_header(int fd, bool s) {
+tree build_dir_tree(int archive, bool s) {
+	/* This needs to build entire directory tree, and then we can traverse it */
+	struct stat;
+	tar_header th;
+	tree headers = NULL;
+	
+	while ((
+	
+	/* pack header and add to list */
+	/* move forward at least 12 bytes */
+	/* keep reading headers while not hitting two null blocks */
+	
+	return headers;
+}
+
+tar_header pack_header(int fd, bool s) {
 	/* each header is 500 bytes */
+	/* do something with ustar??? */
 	tar_header *th;
 	uint8_t buf[512]; /* the last 12 bytes are data, not header */
 	
@@ -247,35 +263,22 @@ void pack_header(int fd, bool s) {
 	memcpy(&th->size, buf + 124, 12);
 	/* etc... */
 	
-	return;
+	return *th;
 }
 
-tree get_header(char *path, bool s) {
-	/* This needs to build entire directory tree, and then we can traverse it */ 
-	int fd;
-	struct stat; 
-	tree headers = NULL;
+void unpack_header(tar_header th, bool s) {
+	char buf[500];
 	
-	
-	if (!(fd = open(path, O_RDONLY))) {
-		perror(path);
-		exit(EXIT_FAILURE);
-	}
-	
-		
-	/* pack header and add to list */
-	/* move forward at least 12 bytes */
-	/* keep reading headers while not hitting two null blocks */
-	
-	close(fd);
-	
-	return headers;
+	strncpy(buf, (char *)th.name, 100);
+	strncpy(buf + 100, (char *)th.mode, 8);
+	strncpy(buf + 108, (char *)th.uid, 8);
+	/* etc... */
 }
 
 bool valid_header(tar_header th) {
 	unsigned int chksum;
 	
-	chksum = atoi((const char *)th.chksum);
+	chksum = strtol((char *)th.chksum, NULL, 8);
 	return calc_chksum(th) == chksum;
 }
 
@@ -303,8 +306,8 @@ int calc_chksum(tar_header th) {
 }
 
 void write_header(char *archive, char *path,  bool s) {
-	/* Used to write the header to the archive file */ 
-        printf("%s\n", path); 
+	/* Used to write the header to the archive file */
+	printf("%s\n", path);
 }
 
 int sum_of_string(const uint8_t *s, int length) {
@@ -314,13 +317,4 @@ int sum_of_string(const uint8_t *s, int length) {
 		sum += s[i];
 	}
 	return sum;
-}
-
-void unpack_header(tar_header th, bool s) {
-	char buf[500];
-	
-	strncpy(buf, (char *)th.name, 100);
-	strncpy(buf + 100, (char *)th.mode, 8);
-	strncpy(buf)
-	/* etc... */
 }

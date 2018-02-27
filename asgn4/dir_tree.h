@@ -6,6 +6,7 @@
 #include <pwd.h>
 #include <grp.h>
 #include <time.h>
+#include <sys/stat.h>
 #include "mem.h"
 
 typedef struct tar_header tar_header;
@@ -46,5 +47,7 @@ void print_tree_helper(tree n);
 tar_header *new_header(void);
 void print_header(tar_header *th, bool v);
 void print_file(tar_header *th);
+
+bool starts_with(char *pre, char *s);
 
 #endif 
