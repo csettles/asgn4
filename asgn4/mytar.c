@@ -74,8 +74,10 @@ int main(int argc, char *argv[]) {
 void list_archive(int num_paths, char **paths, bool v, bool s) {
 	/* struct passwd pd; */
 	tree files;
+	tree temp_files; 
 	int i, j;
 	int archive;
+	char **path_components; 	
 	
 	if ((archive = open(paths[0], O_RDONLY))) {
 		perror(paths[0]);
@@ -94,7 +96,23 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 		
 		/* if there are paths specified... */
 		for (j = 0; j < num_paths; j++) {
-			/* somehow gotta check if header starts with any paths */;
+			/* Break up path, and then traverse files */
+			path_components = split_path(paths[j]);
+			temp_files = files; 
+			while (path_components != NULL) {
+				/* go through current layer */ 
+				while(temp_files->sibling != NULL) {
+					/* If the path matches, go down a layer */
+					if (strcmp(temp_files->file_name,path_components) == 0) {
+						temp_files = temp_files->child; 
+						path_components++; 
+						break; 
+					} else {
+						temp_files = temp_files->sibling; 
+					}
+				}
+			} 
+			/* temp_files should now be at file */ 
 		}
 		
 	        printf("%s\n", files->path);/* free file once done */
