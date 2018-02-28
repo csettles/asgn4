@@ -239,7 +239,6 @@ void handle_dir(int archive, char *rel_path, char *path, bool s) {
 	struct stat sb;
 	
 	char *curr_name;
-	int fd;
 	
 	/* Opens current directory */
 	chdir(path);
@@ -251,16 +250,18 @@ void handle_dir(int archive, char *rel_path, char *path, bool s) {
 			if (!strcmp(curr_name,".") || !strcmp(curr_name,"..")) {
 				continue;
 			}
-			if (!(fd = open(curr_name, O_RDONLY))) {
-				perror(curr_name);
-				exit(EXIT_FAILURE);
-			}
-			if (fstat(fd, &sb) == 0) {
+			if (lstat(curr_name, &sb) == 0) {
 				/* Is regular file */
 				if (S_ISREG(sb.st_mode)) {
 					strcat(rel_path, "/"); 
 					strcat(rel_path, curr_name); 
 					write_header(archive, rel_path, curr_name, s, 0);
+				}
+				/* Is symblink */
+				if (S_ISLNK(sb.st_mode)) {
+					strcat(rel_path, "/");
+					strcat(rel_path, curr_name); 
+					write_header(archive, rel_path, curr_name, s, 2);
 				}
 				/* Is directory */
 				if (S_ISDIR(sb.st_mode)) {
@@ -271,7 +272,6 @@ void handle_dir(int archive, char *rel_path, char *path, bool s) {
 				}
 				rel_path[strlen(rel_path) - 1 - strlen(curr_name)] = 0;
 			}
-			close(fd);
 		}
 	}
 	
