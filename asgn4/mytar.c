@@ -88,6 +88,10 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 	
 	files = build_dir_tree(archive, s);
 	
+	if (num_paths == 0) {
+		print_tree(files, v);
+	}
+	
 	for (i = 0; i < num_paths; i++) {
 		temp_files = files;
 		p = split_path(paths[i]);
@@ -129,7 +133,7 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 	num_paths--;
 	
 	/* If not given any paths, exit? */
-	if (1 == num_paths) {
+	if (0 == num_paths) {
 		fprintf(stderr,
 			"usage: mytar [ctxvS]f tarfile [ path [ ... ] ]\n");
 		exit(EXIT_FAILURE);
@@ -319,7 +323,6 @@ tar_header *pack_header(int fd, bool s) {
 		file_size = 0;
 	}
 	
-	file_size = file_size / 512 + 1;
 	/* maybe want to store file contents for extract? */
 	lseek(fd, SEEK_CUR, 12 + 512 * file_size); /* go to next header */
 	
