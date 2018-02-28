@@ -40,6 +40,7 @@ bool valid_header(tar_header th);
 bool is_archive(char *path);
 void handle_dir(int archive, char *rel_path, char *path, bool s);
 int calc_chksum(tar_header th);
+bool null_block(uint8_t *buf);
 
 int sum_of_string(const uint8_t *s, int length);
 
