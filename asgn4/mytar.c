@@ -430,6 +430,11 @@ void write_header(int archive, char *path, char *rel_path, bool s, int type) {
 			if (path[i] == '/') {
 				break;
 			}
+		}
+		/* Couldn't find a split point */
+		if (i < 0) {
+			fprintf(stderr, "%s: File name too long, skipping.\n", path); 
+			return; 
 		}		
 		/* i now holds the spot of the last / */
 		for (j = 0; j < length; j++) {
