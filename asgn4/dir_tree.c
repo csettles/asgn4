@@ -144,25 +144,6 @@ tree build_tree(tree root, char *curr_path, tar_header *th) {
 	
 	return root;
 }
-	
-//	if (is_child(curr, *path_components) != 0) {
-//		add_child(curr, *path_components, th);
-//		curr = curr->child;
-//		while(strcmp(curr->file_name, *path_components) != 0) {
-//			curr = curr->sibling;
-//		}
-//		/* Didn't find correct path */
-//	} else {
-//		curr = curr->child;
-//		while(strcmp(curr->file_name, *path_components) != 0) {
-//			curr = curr->sibling;
-//		}
-//	}
-//	/* Wrong subdirectory */
-//} else {
-//	curr = curr->sibling;
-//}
-///* Got to end of subdirectory list */
 
 /* Determines if a path is a child of a node */
 int is_child(tree root, char *path) {
