@@ -155,7 +155,7 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 			}
 			/* Is directory */
 			if (S_ISDIR(sb.st_mode)) {
-				printf("%s\n", rel_path);
+				write_header(archive, rel_path, s); 
 				handle_dir(archive, rel_path, paths[i], s);
 			}
 		}
@@ -257,7 +257,7 @@ void handle_dir(int archive, char *rel_path, char *path, bool s) {
 				if (S_ISDIR(sb.st_mode)) {
 					strcat(rel_path, "/"); 
 					strcat(rel_path, curr_name);
-					printf("%s\n", rel_path); 
+					write_header(archive, rel_path, s);
 					handle_dir(archive, rel_path, curr_name, s);
 				}
 				rel_path[strlen(rel_path) - 1 - strlen(curr_name)] = 0;
@@ -380,7 +380,49 @@ int calc_chksum(tar_header th) {
  */
 void write_header(int archive, char *path,  bool s) {
 	/* Used to write the header to the archive file */
-	printf("%s\n", path);
+	char prefix[150];
+	char name[100]; 
+	int char_count = 0; 
+	int fd, i, j, length;
+	
+	if (!(fd = open(path, O_RDONLY))) {
+        	perror(path);
+                exit(EXIT_FAILURE);
+        }
+	
+	for (i = 0; i < 150; i++) {
+		prefix[i] = 0;
+	}
+	for (i = 0; i < 100; i++) {
+		name[i] = 0; 
+	}
+
+	length = strlen(path);
+	char_count = length; 
+	if (length >= 100) {
+		for (i = 99; i >= 0; i--) {
+			if (path[i] == '/') {
+				break;
+			}
+		}		
+		/* i now holds the spot of the last / */
+		for (j = 0; j < length; j++) {
+			if (j < i) {
+				prefix[j] = path[i];
+			} else {
+				name[j-i] = path[i]; 
+			}
+		}	
+	} else {
+		for (i = 0; i < length; i++) {
+			name[i] = path[i];
+		}
+	}
+
+	printf("%s\n", name);
+	printf("%s\n", prefix);
+	printf("%d\n", char_count);
+	printf("\n"); 
 }
 
 int sum_of_string(const uint8_t *s, int length) {
