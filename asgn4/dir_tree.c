@@ -236,10 +236,6 @@ void print_header(tar_header *th, bool v) {
 	printf((file_mode & S_IXOTH) ? "x" : "-");
 	
 	/*print owner/group name */
-//	if (!(pd = getpwuid(uid)) || !(gd = getgrgid(gid))) {
-//		fprintf(stderr, "owner not found\n");
-//		exit(EXIT_FAILURE);
-//	}
 	
 	if (strlen(th->uname) >= 17) {
 		printf(" %17s", th->uname);

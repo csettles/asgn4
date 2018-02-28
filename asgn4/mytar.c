@@ -120,8 +120,8 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 	int i, fd;
 	struct stat sb;
 	int archive;
-	char rel_path[2048]; 
-		
+	char rel_path[2048];
+	
 	if ((archive = open(paths[0], O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0) {
 		perror(paths[0]);
 		exit(EXIT_FAILURE);
@@ -130,7 +130,7 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 	num_paths--;
 	
 	/* If not given any paths, exit? */
-	if (1 == num_paths) {
+	if (0 == num_paths) {
 		fprintf(stderr,
 			"usage: mytar [ctxvS]f tarfile [ path [ ... ] ]\n");
 		exit(EXIT_FAILURE);
@@ -143,17 +143,18 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 			exit(EXIT_FAILURE);
 		}
 		if (fstat(fd, &sb) == 0) {
+			memset(rel_path, 0, strlen(rel_path));
+			strcpy(rel_path, paths[i]);  
 			/* Is regular file */
-			memset(rel_path, 0, strlen(rel_path)); 
-			strcpy(rel_path, paths[i]); 
 			if (S_ISREG(sb.st_mode)) {
 				write_header(archive, rel_path, s);
 			}
 			/* Is directory */
 			if (S_ISDIR(sb.st_mode)) {
-				handle_dir(archive, rel_path, s);
+				handle_dir(archive, rel_path, paths[i], s);
 			}
 		}
+		close(fd); 
 	}
 	
 	close(archive);
@@ -217,7 +218,7 @@ bool is_archive(char *path) {
  @param path <#path description#>
  @param s <#s description#>
  */
-void handle_dir(int archive, char *path, bool s) {
+void handle_dir(int archive, char *rel_path, char *path, bool s) {
 	/* For create_archive, when given a directory to archive */
 	DIR *d;
 	struct dirent *dir;
@@ -243,17 +244,18 @@ void handle_dir(int archive, char *path, bool s) {
 			if (fstat(fd, &sb) == 0) {
 				/* Is regular file */
 				if (S_ISREG(sb.st_mode)) {
-					strcat(path, "/");
+					strcat(path, "/"); 
 					strcat(path, curr_name); 
 					write_header(archive, path, s);
 				}
 				/* Is directory */
 				if (S_ISDIR(sb.st_mode)) {
-					strcat(path, "/");
-					strcat(path, curr_name); 
-					handle_dir(archive, path, s);
+					strcat(rel_path, "/"); 
+					strcat(rel_path, curr_name); 
+					handle_dir(archive, rel_path, path, s);
 				}
 			}
+			close(fd);
 		}
 	}
 	

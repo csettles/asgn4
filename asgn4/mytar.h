@@ -38,7 +38,7 @@ void unpack_header(tar_header th, bool s);
 bool valid_header(tar_header th);
 
 bool is_archive(char *path);
-void handle_dir(int archive, char *path, bool s);
+void handle_dir(int archive, char *rel_path, char *path, bool s);
 int calc_chksum(tar_header th);
 
 int sum_of_string(const uint8_t *s, int length);
