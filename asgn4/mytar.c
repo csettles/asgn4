@@ -262,8 +262,8 @@ tree build_dir_tree(int archive, bool s) {
 	tree headers = NULL;
 	
 	while ((th = pack_header(archive, s)) != NULL) {
-		len = strlen((char *)th->prefix);
-		strcpy(full_path, th->prefix);
+		len = (int)strlen((char *)th->prefix);
+		strcpy(full_path, (char *)th->prefix);
 		full_path[len] = '/';
 		strcpy(full_path + len + 1, (char *)th->name);
 		
@@ -305,6 +305,11 @@ tar_header *pack_header(int fd, bool s) {
 	memcpy(&th->devmajor, buf + 329, 8);
 	memcpy(&th->devminor, buf + 337, 8);
 	memcpy(&th->prefix, buf + 345, 155);
+	
+	if (!valid_header(*th)) {
+		fprintf(stderr, "pack_header: malformed header found\n");
+		return NULL;
+	}
 	
 	file_size = (int)strtol((char *)th->size, NULL, 8);
 	
@@ -371,5 +376,6 @@ int sum_of_string(const uint8_t *s, int length) {
 	}
 	return sum;
 }
-
-
+<<<<<<< HEAD
+=======
+>>>>>>> bf695c24e9395d2acacf5e77864fc5e87300a7ee
