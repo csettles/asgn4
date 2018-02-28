@@ -106,9 +106,8 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 
 void create_archive(int num_paths, char **paths, bool v, bool s) {
 	/* Used to create archive by reading in paths and generating headers **/
-	int i, fd;
+	int i, archive;
 	struct stat sb;
-	int archive;
 	char rel_path[2048];
 	
 	if ((archive = open(paths[0], O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0) {
@@ -127,24 +126,26 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 	
 	/* If made to here, correctly found tar file and found at least one path input */
 	for (i = 0; i < num_paths; i++) {
-		if (!(fd = open(paths[i], O_RDONLY))) {
-			perror(paths[i]);
-			exit(EXIT_FAILURE);
-		}
-		if (fstat(fd, &sb) == 0) {
+		if (lstat(paths[i], &sb) == 0) {
 			memset(rel_path, 0, strlen(rel_path));
 			strcpy(rel_path, paths[i]);  
 			/* Is regular file */
 			if (S_ISREG(sb.st_mode)) {
 				write_header(archive, rel_path, paths[i], s, 0);
 			}
+			/* Is symlink */
+			if (S_ISLNK(sb.st_mode)) {
+				write_header(archive, rel_path, paths[i], s, 2); 	
+			}
 			/* Is directory */
 			if (S_ISDIR(sb.st_mode)) {
 				write_header(archive, rel_path, paths[i], s, 5); 
 				handle_dir(archive, rel_path, paths[i], s);
 			}
+		} else {
+			perror(paths[i]);
+			continue; 
 		}
-		close(fd); 
 	}
 	
 	close(archive);
@@ -274,7 +275,6 @@ void handle_dir(int archive, char *rel_path, char *path, bool s) {
 	struct stat sb;
 	
 	char *curr_name;
-	int fd;
 	
 	/* Opens current directory */
 	chdir(path);
@@ -286,16 +286,18 @@ void handle_dir(int archive, char *rel_path, char *path, bool s) {
 			if (!strcmp(curr_name,".") || !strcmp(curr_name,"..")) {
 				continue;
 			}
-			if (!(fd = open(curr_name, O_RDONLY))) {
-				perror(curr_name);
-				exit(EXIT_FAILURE);
-			}
-			if (fstat(fd, &sb) == 0) {
+			if (lstat(curr_name, &sb) == 0) {
 				/* Is regular file */
 				if (S_ISREG(sb.st_mode)) {
 					strcat(rel_path, "/"); 
 					strcat(rel_path, curr_name); 
 					write_header(archive, rel_path, curr_name, s, 0);
+				}
+				/* Is symblink */
+				if (S_ISLNK(sb.st_mode)) {
+					strcat(rel_path, "/");
+					strcat(rel_path, curr_name); 
+					write_header(archive, rel_path, curr_name, s, 2);
 				}
 				/* Is directory */
 				if (S_ISDIR(sb.st_mode)) {
@@ -306,7 +308,6 @@ void handle_dir(int archive, char *rel_path, char *path, bool s) {
 				}
 				rel_path[strlen(rel_path) - 1 - strlen(curr_name)] = 0;
 			}
-			close(fd);
 		}
 	}
 	
@@ -448,17 +449,15 @@ int calc_chksum(tar_header th) {
 void write_header(int archive, char *path, char *rel_path, bool s, int type) {
 	/* Used to write the header to the archive file */
 	char prefix[150];
-	char name[100]; 
-	int fdpath, i, j, length;
+	char name[100];
+	unsigned int dev_major;
+	unsigned int dev_minor;   
+	int i, j, length, chkvalue;
 	struct stat sb; 
 	struct passwd *pw;
-	struct group *gr; 	
+	struct group *gr; 
+	tar_header *th; 	
 	
-	if ((fdpath = open(rel_path, O_RDONLY)) < 0) {
-		perror(path);
-		exit(EXIT_FAILURE);
-	}	
-
 	/* Clears out prefix and name with null values */	
 	for (i = 0; i < 150; i++) {
 		prefix[i] = 0;
@@ -475,6 +474,11 @@ void write_header(int archive, char *path, char *rel_path, bool s, int type) {
 			if (path[i] == '/') {
 				break;
 			}
+		}
+		/* Couldn't find a split point */
+		if (i < 0) {
+			fprintf(stderr, "%s: File name too long, skipping.\n", path); 
+			return; 
 		}		
 		/* i now holds the spot of the last / */
 		for (j = 0; j < length; j++) {
@@ -490,35 +494,51 @@ void write_header(int archive, char *path, char *rel_path, bool s, int type) {
 			name[i] = path[i];
 		}
 	}
-	archive = 1;
-	if (fstat(fdpath, &sb) == 0) {
-		write(archive, name, 100); 
-		write(archive, &sb.st_mode, 8); 
-		write(archive, &sb.st_uid, 8);
-		write(archive, &sb.st_gid, 8); 
-		write(archive, &sb.st_size, 12);
-		write(archive, &sb.st_mtime, 12);
-		write(archive, "      ", 8); /*Gotta do check sum */
-		write(archive, &type, 1); 
-		write(archive, "ustar", 6);
-		write(archive, "00", 2);
+	
+	th = new_header(); 
+
+	if (lstat(rel_path, &sb) == 0) {
+		memcpy(&th->name, name, 100); 
+		memcpy(&th->mode, &sb.st_mode, 8); 
+		memcpy(&th->uid, &sb.st_uid, 8);
+		memcpy(&th->gid, &sb.st_gid, 8); 
+		memcpy(&th->size, &sb.st_size, 12);
+		memcpy(&th->mtime, &sb.st_mtime, 12);
+		memcpy(&th->chksum, "        ", 8); /*Gotta do check sum */
+		memcpy(&th->typeflag, &type, 1); 
+		if (type == 2) {
+			/* link name*/
+			memcpy(&th->linkname, "ustar", 100);
+		} else {
+			memcpy(&th->linkname, "", 100); 
+		}
+		memcpy(&th->magic, "ustar", 6); 
+		memcpy(&th->version, "00", 2);
 		
 		pw = getpwuid(sb.st_uid); 
 		gr = getgrgid(sb.st_gid);
 	
-		write(archive, pw->pw_name, 32);
-		write(archive, gr->gr_name, 32);
-		write(archive, &sb.st_dev, 8);/* Not sure about this */
-		write(archive, &sb.st_dev, 8);/* Not sure about this */ 
-		write(archive, prefix, 150);
+		memcpy(&th->uname, pw->pw_name, 32);
+		memcpy(&th->gname, gr->gr_name, 32);
+		
+		dev_major = major(sb.st_rdev);
+		dev_minor = minor(sb.st_rdev); 
+
+		memcpy(&th->devmajor, &dev_major, 8);/* Not sure about this */
+		memcpy(&th->devminor, &dev_minor, 8);/* Not sure about this */ 
+		memcpy(&th->prefix, prefix, 150);
+	
+		chkvalue = calc_chksum(*th); 
+		
+		memcpy(&th->chksum, &chkvalue, 8);  
+		
+			
 	} else {
 		perror(path);
 		exit(EXIT_FAILURE);
 	}
-	printf("\n");
-	close(fdpath);
-	
 }
+
 
 int sum_of_string(const uint8_t *s, int length) {
 	int i, sum = 0;
