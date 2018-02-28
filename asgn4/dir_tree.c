@@ -148,30 +148,6 @@ tree build_tree(tree root, char *curr_path, tar_header *th) {
 	return root;
 }
 
-//if (curr != NULL) {
-//	while (curr != NULL) {
-//		if (strcmp(curr->file_name, *path_components) == 0) {
-//			/* Found the correct path */
-//			path_components++;
-//			prev = curr;
-//			curr = curr->child; /* descend into directory */
-//			break; /* stop searching siblings */
-//		}
-//		prev = curr;
-//		curr = curr->sibling;
-//	}
-//	if (curr == NULL) {
-//		curr = add_sibling(prev, *path_components, th);
-//		path_components++;
-//	}
-//
-//} else {
-//	curr = add_child(prev, *path_components, th);
-//	path_components++;
-//	curr = curr->child;
-//}
-//prev = curr;
-
 /* Determines if a path is a child of a node */
 int is_child(tree root, char *path) {
 	root = root->child;
