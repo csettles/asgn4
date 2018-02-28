@@ -396,11 +396,14 @@ int calc_chksum(tar_header th) {
 void write_header(int archive, char *path, char *rel_path, bool s, int type) {
 	/* Used to write the header to the archive file */
 	char prefix[150];
-	char name[100]; 
-	int fdpath, i, j, length;
+	char name[100];
+	unsigned int dev_major;
+	unsigned int dev_minor;   
+	int fdpath, i, j, length, chkvalue;
 	struct stat sb; 
 	struct passwd *pw;
-	struct group *gr; 	
+	struct group *gr; 
+	tar_header *th; 	
 	
 	if ((fdpath = open(rel_path, O_RDONLY)) < 0) {
 		perror(path);
@@ -438,35 +441,53 @@ void write_header(int archive, char *path, char *rel_path, bool s, int type) {
 			name[i] = path[i];
 		}
 	}
-	archive = 1;
+	
+	th = new_header(); 
+
 	if (fstat(fdpath, &sb) == 0) {
-		write(archive, name, 100); 
-		write(archive, &sb.st_mode, 8); 
-		write(archive, &sb.st_uid, 8);
-		write(archive, &sb.st_gid, 8); 
-		write(archive, &sb.st_size, 12);
-		write(archive, &sb.st_mtime, 12);
-		write(archive, "      ", 8); /*Gotta do check sum */
-		write(archive, &type, 1); 
-		write(archive, "ustar", 6);
-		write(archive, "00", 2);
+		memcpy(&th->name, name, 100); 
+		memcpy(&th->mode, &sb.st_mode, 8); 
+		memcpy(&th->uid, &sb.st_uid, 8);
+		memcpy(&th->gid, &sb.st_gid, 8); 
+		memcpy(&th->size, &sb.st_size, 12);
+		memcpy(&th->mtime, &sb.st_mtime, 12);
+		memcpy(&th->chksum, "        ", 8); /*Gotta do check sum */
+		memcpy(&th->typeflag, &type, 1); 
+		if (type == 2) {
+			/* link name*/
+			memcpy(&th->linkname, "ustar", 100);
+		} else {
+			memcpy(&th->linkname, "", 100); 
+		}
+		memcpy(&th->magic, "ustar", 6); 
+		memcpy(&th->version, "00", 2);
 		
 		pw = getpwuid(sb.st_uid); 
 		gr = getgrgid(sb.st_gid);
 	
-		write(archive, pw->pw_name, 32);
-		write(archive, gr->gr_name, 32);
-		write(archive, &sb.st_dev, 8);/* Not sure about this */
-		write(archive, &sb.st_dev, 8);/* Not sure about this */ 
-		write(archive, prefix, 150);
+		memcpy(&th->uname, pw->pw_name, 32);
+		memcpy(&th->gname, gr->gr_name, 32);
+		
+		dev_major = major(sb.st_rdev);
+		dev_minor = minor(sb.st_rdev); 
+
+		memcpy(&th->devmajor, &dev_major, 8);/* Not sure about this */
+		memcpy(&th->devminor, &dev_minor, 8);/* Not sure about this */ 
+		memcpy(&th->prefix, prefix, 150);
+	
+		chkvalue = calc_chksum(*th); 
+		
+		memcpy(&th->chksum, &chkvalue, 8);  
+		
+			
 	} else {
 		perror(path);
 		exit(EXIT_FAILURE);
 	}
-	printf("\n");
 	close(fdpath);
 	
 }
+
 
 int sum_of_string(const uint8_t *s, int length) {
 	int i, sum = 0;
