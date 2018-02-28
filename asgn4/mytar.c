@@ -89,7 +89,7 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 	files = build_dir_tree(archive, s);
 	
 	if (num_paths == 0) {
-		print_tree(files, v);
+		print_tree_helper(files, v);
 	}
 	
 	for (i = 0; i < num_paths; i++) {
@@ -283,6 +283,11 @@ tree build_dir_tree(int archive, bool s) {
 		full_path[len] = '/';
 		strcpy(full_path + len + 1, (char *)th->name);
 		
+		if (!valid_header(*th)) {
+			fprintf(stderr, "pack_header: malformed header found\n");
+			break;
+		}
+		
 		headers = build_tree(headers, full_path, th);
 	}
 	
@@ -296,11 +301,15 @@ tar_header *pack_header(int fd, bool s) {
 	/* do something with ustar??? */
 	int file_size;
 	tar_header *th;
-	uint8_t buf[500]; /* the last 12 bytes are data, not header */
+	uint8_t buf[512]; /* the last 12 bytes are data, not header */
 	
 	th = new_header();
 	
-	if (read(fd, buf, 500) < 500) {
+	if (read(fd, buf, 512) < 512) {
+		return NULL; /* end of file */
+	}
+	
+	if (null_block(buf)) {
 		return NULL;
 	}
 	
@@ -322,23 +331,29 @@ tar_header *pack_header(int fd, bool s) {
 	memcpy(&th->devminor, buf + 337, 8);
 	memcpy(&th->prefix, buf + 345, 155);
 	
-	if (!valid_header(*th)) {
-		fprintf(stderr, "pack_header: malformed header found\n");
-		return NULL;
-	}
-	
 	file_size = (int)strtol((char *)th->size, NULL, 8);
 	
-	if (file_size > 12) {
-		file_size = ((file_size - 12) / 512) + 1;
+	if ((file_size -= 12) > 0) {
+		file_size = file_size / 512 + 1;
 	} else {
 		file_size = 0;
 	}
 	
 	/* maybe want to store file contents for extract? */
-	lseek(fd, SEEK_CUR, 12 + 512 * file_size); /* go to next header */
+	lseek(fd, 512 * file_size, SEEK_CUR); /* go to next header */
 	
 	return th;
+}
+
+bool null_block(uint8_t *buf) {
+	int i;
+	
+	for (i = 0; i < BLK_SIZE; i++) {
+		if (buf[i] != '\0') {
+			return false;
+		}
+	}
+	return true;
 }
 
 bool valid_header(tar_header th) {

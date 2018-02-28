@@ -12,7 +12,9 @@ tree create_node(char *path, tar_header *data) {
 	
 	t = safe_malloc(sizeof(struct tree));
 	
-	t->file_name = path;
+	t->file_name = safe_malloc(strlen(path));
+	strcpy(t->file_name, path);
+	
 	t->th = *data;
 	t->child = NULL;
 	t->sibling = NULL;
@@ -50,8 +52,7 @@ void free_tree(tree n) {
  */
 tree add_child(tree n, char *path, tar_header *th) {
 	if (n == NULL) {
-		n = create_node(path, th);
-		return n;
+		return create_node(path, th);
 	}
 	
 	/* If the child already exists, need to add as sibling to child*/
@@ -71,7 +72,7 @@ tree add_child(tree n, char *path, tar_header *th) {
  */
 tree add_sibling(tree n, char *path, tar_header *th) {
 	if (n == NULL) {
-		return NULL;
+		return create_node(path, th);
 	}
 	
 	/* Add things left to right */
@@ -107,6 +108,7 @@ tree build_tree(tree root, char *curr_path, tar_header *th) {
 	char **path_components;
 	int path_size;
 	tree curr, prev;
+	bool found = false;
 	
 	path_components = split_path(curr_path);
 	path_size = path_length(path_components);
@@ -119,31 +121,56 @@ tree build_tree(tree root, char *curr_path, tar_header *th) {
 	curr = prev = root;
 	/* If more things, must be a sub directory */
 	while(*path_components) {
-		if (curr != NULL) {
-			while (curr != NULL) {
-				if (strcmp(curr->file_name, *path_components) == 0) {
-					/* Found the correct path */
-					path_components++;
-					curr = curr->child; /* descend into directory */
-					break; /* stop searching siblings */
-				}
+		while (curr != NULL) {
+			if (strcmp(curr->file_name, *path_components) == 0) {
+				/* Found the correct path */
+				path_components++;
+				prev = curr;
+				curr = curr->child; /* descend into directory */
+				found = true;
+				break; /* go to new path component */
+			} else {
+				prev = curr;
 				curr = curr->sibling;
 			}
 			
-			/* something could happen here */
-			/* siblings not found */
-				
-		} else {
-			curr = add_child(prev, *path_components, th);
-			path_components++;
-			curr = curr->child;
 		}
-		prev = curr;
-		
+		if (found) {
+			found = false;
+			continue;
+		}
+		/* directory not found */
+		curr = add_sibling(prev, *path_components, th);
+		curr = curr->child;
+		path_components++;
 	}
 	
 	return root;
 }
+
+//if (curr != NULL) {
+//	while (curr != NULL) {
+//		if (strcmp(curr->file_name, *path_components) == 0) {
+//			/* Found the correct path */
+//			path_components++;
+//			prev = curr;
+//			curr = curr->child; /* descend into directory */
+//			break; /* stop searching siblings */
+//		}
+//		prev = curr;
+//		curr = curr->sibling;
+//	}
+//	if (curr == NULL) {
+//		curr = add_sibling(prev, *path_components, th);
+//		path_components++;
+//	}
+//
+//} else {
+//	curr = add_child(prev, *path_components, th);
+//	path_components++;
+//	curr = curr->child;
+//}
+//prev = curr;
 
 /* Determines if a path is a child of a node */
 int is_child(tree root, char *path) {
@@ -191,10 +218,11 @@ int path_length(char **path_components) {
  @param v the verbose option
  */
 void print_header(tar_header *th, bool v) {
-	int file_mode, size;
+	int size;
 	uid_t uid;
 	gid_t gid;
 	time_t mtime;
+	mode_t file_mode;
 	char time[17];
 	
 	if (!v) {
@@ -210,9 +238,9 @@ void print_header(tar_header *th, bool v) {
 	mtime = strtol((const char *)th->mtime, NULL, 8);
 	
 	/* print permissions */
-	if (S_ISLNK(file_mode)) {
+	if (th->typeflag == '2') {
 		printf("l");
-	} else if (S_ISDIR(file_mode)) {
+	} else if (th->typeflag == '5') {
 		printf("d");
 	} else {
 		printf("-");
@@ -227,12 +255,12 @@ void print_header(tar_header *th, bool v) {
 	printf((file_mode & S_IWOTH) ? "w" : "-");
 	printf((file_mode & S_IXOTH) ? "x" : "-");
 	
-	if (strlen(th->uname) >= 17) {
+	if (strlen((const char *)th->uname) >= 17) {
 		printf(" %17s", th->uname);
 	} else {
-		printf(" %-*s/%-*s", (int)strlen(th->uname),
+		printf(" %-*s/%-*s", (int)strlen((char *)th->uname),
 		       th->uname,
-		       17 - 1 - (int)strlen(th->gname),
+		       17 - 1 - (int)strlen((char *)th->gname),
 		       th->gname);
 	}
 	
