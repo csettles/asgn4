@@ -372,12 +372,4 @@ int sum_of_string(const uint8_t *s, int length) {
 	return sum;
 }
 
-//void unpack_header(tar_header th, bool s) {
-//	char buf[500];
-//
-//	strncpy(buf, (char *)th.name, 100);
-//	strncpy(buf + 100, (char *)th.mode, 8);
-//	/*strncpy(buf)*/
-//	/* etc... */
-//}
 
