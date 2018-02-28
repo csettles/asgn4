@@ -77,7 +77,7 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 	tree temp_files;
 	int i, j;
 	int archive;
-	char **path_components;
+	char **p;
 	
 	if ((archive = open(paths[0], O_RDONLY)) < 0) {
 		perror(paths[0]);
@@ -89,26 +89,25 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 	files = build_dir_tree(archive, s);
 	
 	for (i = 0; i < num_paths; i++) {
-		/* if there are paths specified... */
-		for (j = 0; j < num_paths; j++) {
-			/* Break up path, and then traverse files */
-			path_components = split_path(paths[j]);
-			temp_files = files;
-			while (path_components != NULL) {
-				/* go through current layer */
-				while(temp_files->sibling != NULL) {
-					/* If the path matches, go down a layer */
-					if (strcmp(temp_files->file_name,*path_components) == 0) {
-						temp_files = temp_files->child;
-						path_components++;
-						break;
-					} else {
-						temp_files = temp_files->sibling;
-					}
+		temp_files = files;
+		p = split_path(paths[i]);
+		
+		for (j = 0; j < path_length(p); j++) {
+			while (temp_files) {
+				if (strcmp(temp_files->file_name, p[j]) == 0) {
+					temp_files = temp_files->child;
+					break; /* stop looking @ siblings
+						   and descend */
 				}
+				temp_files = temp_files->sibling;
 			}
-			/* temp_files should now be at file */
+			if (temp_files == NULL) {
+				fprintf(stderr, "nonexistant path\n");
+				break;
+			}
 		}
+		/* temp_file should now point to correct subdirectory/file */
+		print_tree(temp_files, v);
 	}
 	
 	close(archive);
@@ -258,10 +257,17 @@ tree build_dir_tree(int archive, bool s) {
 	/* This needs to build entire directory tree, and then we can traverse it */
 	struct stat;
 	tar_header *th;
+	char full_path[255];
+	int len;
 	tree headers = NULL;
 	
 	while ((th = pack_header(archive, s)) != NULL) {
-		headers = build_tree(headers, <#char *curr_path#>, th);
+		len = strlen((char *)th->prefix);
+		strcpy(full_path, th->prefix);
+		full_path[len] = '/';
+		strcpy(full_path + len + 1, (char *)th->name);
+		
+		headers = build_tree(headers, full_path, th);
 	}
 	
 	/* keep reading headers while not hitting two null blocks */
@@ -302,42 +308,17 @@ tar_header *pack_header(int fd, bool s) {
 	
 	file_size = (int)strtol((char *)th->size, NULL, 8);
 	
+	if (file_size > 12) {
+		file_size = ((file_size - 12) / 512) + 1;
+	} else {
+		file_size = 0;
+	}
+	
 	file_size = file_size / 512 + 1;
 	/* maybe want to store file contents for extract? */
-	lseek(fd, SEEK_CUR, 512 * file_size); /* go to next header */
+	lseek(fd, SEEK_CUR, 12 + 512 * file_size); /* go to next header */
 	
 	return th;
-}
-
-tree get_header(char *path, bool s) {
-	/* This needs to build entire directory tree, and then we can traverse it */
-	int fd;
-	char *curr_path;
-	unsigned char buffer_header[500];
-	size_t bytes_read = 500; /* Might want to change this */
-	struct stat;
-	tree headers = NULL;
-	
-	if (!(fd = open(path, O_RDONLY))) {
-		perror(path);
-		exit(EXIT_FAILURE);
-	}
-	
-	while ((bytes_read = read(fd, buffer_header, 500)) > 0) {
-		/*tar_header curr_header = new_header(); make the header */
-		tar_header *tarh = NULL;
-		curr_path = NULL;
-		headers = build_tree(headers, curr_path, tarh);
-		
-	}
-	
-	/* pack header and add to list */
-	/* move forward at least 12 bytes */
-	/* keep reading headers while not hitting two null blocks */
-	
-	close(fd);
-	
-	return headers;
 }
 
 bool valid_header(tar_header th) {
@@ -391,11 +372,12 @@ int sum_of_string(const uint8_t *s, int length) {
 	return sum;
 }
 
-void unpack_header(tar_header th, bool s) {
-	char buf[500];
-	
-	strncpy(buf, (char *)th.name, 100);
-	strncpy(buf + 100, (char *)th.mode, 8);
-	/*strncpy(buf)*/
-	/* etc... */
-}
+//void unpack_header(tar_header th, bool s) {
+//	char buf[500];
+//
+//	strncpy(buf, (char *)th.name, 100);
+//	strncpy(buf + 100, (char *)th.mode, 8);
+//	/*strncpy(buf)*/
+//	/* etc... */
+//}
+

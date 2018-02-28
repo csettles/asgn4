@@ -49,8 +49,8 @@ int is_child(tree root, char *path);
 int path_length(char **path_components); 
 char ** split_path(char *curr_path);
 
-void print_tree_init(tree n);
-void print_tree_helper(tree n);
+void print_tree(tree n, bool v);
+void print_tree_helper(tree n, bool v);
 
 tar_header *new_header(void);
 void print_header(tar_header *th, bool v);

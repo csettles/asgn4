@@ -82,21 +82,6 @@ tree add_sibling(tree n, char *path, tar_header *th) {
 }
 
 /**
- Depth first traversal of the directory tree in which each path within is
- printed to stdout.
- 
- @param n the tree to print
- */
-void print_tree_init(tree n) {
-	if (n == NULL) {
-		return;
-	}
-	printf("%s\n", n->th.name);
-	
-	print_tree_helper(n->child);
-}
-
-/**
  Determines if a tree node is a directory or regular file.
  
  @param n the tree node to test
@@ -104,22 +89,6 @@ void print_tree_init(tree n) {
  */
 bool is_dir(tree n) {
 	return n->child != NULL;
-}
-
-/**
- Recursively prints all nodes and their children.
- 
- @param n the tree node to print
- */
-void print_tree_helper(tree n) {
-	if (n == NULL) {
-		return;
-	}
-	while (n != NULL) {
-		printf("%s\n", n->th.name);
-		print_tree_helper(n->child);
-		n = n->sibling;
-	}
 }
 
 tar_header *new_header(void) {
@@ -203,6 +172,7 @@ char **split_path(char *curr_path) {
 		path_parts = safe_realloc(path_parts, sizeof(char*) * ++n_words);
 		path_parts[n_words-1] = curr_word;
 		curr_word = strtok(NULL, "/");
+		
 	}
 	
 	path_parts = safe_realloc(path_parts, sizeof(char*) * (n_words + 1));
@@ -219,6 +189,13 @@ int path_length(char **path_components) {
 	return i;
 }
 
+/**
+ Prints a tar header struct either verbosely (equivalent to doing ls -lR)
+ or simply just printing the path name.
+
+ @param th the tar header to print
+ @param v the verbose option
+ */
 void print_header(tar_header *th, bool v) {
 	int file_mode, size;
 	uid_t uid;
@@ -291,7 +268,45 @@ void print_header(tar_header *th, bool v) {
 	printf("\n");
 }
 
-void print_file(tar_header *th) {
+/**
+ Prints a file/directory tree. Ignores any siblings of the given node.
+
+ @param n the tree node to print
+ @param v the verbose option
+ */
+void print_tree(tree n, bool v) {
+	if (n == NULL) {
+		return;
+	}
+	print_header(&n->th, v);
+	print_tree_helper(n->child, v);
+}
+
+/**
+ Helper function for print_tree(). Prints a tree node, its children, and then
+ all its siblings.
+
+ @param n the tree node to print
+ @param v the verbose option
+ */
+void print_tree_helper(tree n, bool v) {
+	if (n == NULL) {
+		return;
+	}
+	
+	while (n) {
+		print_header(&n->th, v);
+		print_tree_helper(n->child, v);
+		n = n->sibling;
+	}
+}
+
+/**
+ Prints the path name of an archived file.
+
+ @param th the tar header to print
+ */
+void print_node(tar_header *th) {
 	if (strlen((const char *)th->prefix) > 0) {
 		printf("%s/%s", th->prefix, th->name);
 	} else {
