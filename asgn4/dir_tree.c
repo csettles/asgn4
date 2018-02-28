@@ -50,7 +50,8 @@ void free_tree(tree n) {
  */
 tree add_child(tree n, char *path, tar_header *th) {
 	if (n == NULL) {
-		return NULL;
+		n = create_node(path, th);
+		return n;
 	}
 	
 	/* If the child already exists, need to add as sibling to child*/
@@ -105,51 +106,63 @@ tar_header *new_header(void) {
 tree build_tree(tree root, char *curr_path, tar_header *th) {
 	char **path_components;
 	int path_size;
+	tree curr, prev;
 	
-	tree head = root;
 	path_components = split_path(curr_path);
 	path_size = path_length(path_components);
 	
-	/* One thing, either top of the directory tree or file */
-	if (path_size == 1) {
-		if (root->file_name == NULL) {
-			root->th = *th;
-			root->file_name = *path_components;
-		}
+	if (root == NULL && path_size >= 1) {
+		root = create_node(*path_components, th);
+		path_components++;
 	}
+	
+	curr = prev = root;
 	/* If more things, must be a sub directory */
-	else {
-		while(path_components) {
-			if (root != NULL) {
-				/* Right subdirectory */
-				if (strcmp(root->file_name, *path_components) == 0) {
+	while(*path_components) {
+		if (curr != NULL) {
+			while (curr != NULL) {
+				if (strcmp(curr->file_name, *path_components) == 0) {
 					/* Found the correct path */
 					path_components++;
-					if (is_child(root, *path_components) != 0) {
-						add_child(root, *path_components, th);
-						root = root->child;
-						while(strcmp(root->file_name, *path_components) != 0) {
-							root = root->sibling;
-						}
-						/* Didn't find correct path */
-					} else {
-						root = root->child;
-						while(strcmp(root->file_name, *path_components) != 0) {
-							root = root->sibling;
-						}
-					}
-					/* Wrong subdirectory */
-				} else {
-					root = root->sibling;
+					curr = curr->child; /* descend into directory */
+					break; /* stop searching siblings */
 				}
-				/* Got to end of subdirectory list */
-			} else {
-				root = create_node(*path_components, th);
+				curr = curr->sibling;
 			}
+			
+			/* something could happen here */
+			/* siblings not found */
+				
+		} else {
+			curr = add_child(prev, *path_components, th);
+			path_components++;
+			curr = curr->child;
 		}
+		prev = curr;
+		
 	}
-	return head;
+	
+	return root;
 }
+	
+//	if (is_child(curr, *path_components) != 0) {
+//		add_child(curr, *path_components, th);
+//		curr = curr->child;
+//		while(strcmp(curr->file_name, *path_components) != 0) {
+//			curr = curr->sibling;
+//		}
+//		/* Didn't find correct path */
+//	} else {
+//		curr = curr->child;
+//		while(strcmp(curr->file_name, *path_components) != 0) {
+//			curr = curr->sibling;
+//		}
+//	}
+//	/* Wrong subdirectory */
+//} else {
+//	curr = curr->sibling;
+//}
+///* Got to end of subdirectory list */
 
 /* Determines if a path is a child of a node */
 int is_child(tree root, char *path) {
@@ -200,22 +213,20 @@ void print_header(tar_header *th, bool v) {
 	int file_mode, size;
 	uid_t uid;
 	gid_t gid;
-	struct passwd *pd;
-	struct group *gd;
 	time_t mtime;
-	char time[16];
+	char time[17];
 	
 	if (!v) {
 		print_name(th);
 		return;
 	}
 	
-	/* these won't fail because max is 2^8 */
-	uid = (int)strtol((const char *)th->uid, NULL, 10);
-	gid = (int)strtol((const char *)th->gid, NULL, 10);
+	/* these won't fail because max is 8^8 */
+	uid = (int)strtol((const char *)th->uid, NULL, 8);
+	gid = (int)strtol((const char *)th->gid, NULL, 8);
 	file_mode = (int)strtol((const char *)th->mode, NULL, 8);
 	size = (int)strtol((const char *)th->size, NULL, 8);
-	mtime = strtol((const char *)th->mtime, NULL, 10);
+	mtime = strtol((const char *)th->mtime, NULL, 8);
 	
 	/* print permissions */
 	if (S_ISLNK(file_mode)) {
@@ -235,8 +246,6 @@ void print_header(tar_header *th, bool v) {
 	printf((file_mode & S_IWOTH) ? "w" : "-");
 	printf((file_mode & S_IXOTH) ? "x" : "-");
 	
-	/*print owner/group name */
-	
 	if (strlen(th->uname) >= 17) {
 		printf(" %17s", th->uname);
 	} else {
@@ -251,7 +260,7 @@ void print_header(tar_header *th, bool v) {
 	
 	/* print time */
 	/* assuming th->mtime is a timestamp */
-	if (strftime(time, 16, "%Y-%m-%d %H:%M", localtime(&mtime)) == 0) {
+	if (strftime(time, 17, "%Y-%m-%d %H:%M", localtime(&mtime)) == 0) {
 		fprintf(stderr, "unrecognized time\n");
 		exit(EXIT_FAILURE);
 	}
