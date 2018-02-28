@@ -151,10 +151,6 @@ tree build_tree(tree root, char *curr_path, tar_header *th) {
 			curr = add_sibling(prev, *path_components, th);
 			path_components++;
 		}
-//		 else if (!found || (found && curr != NULL)){
-//			curr = add_sibling(prev, *path_components, th);
-//			curr = curr->child;
-//		}
 	}
 	
 	return root;
