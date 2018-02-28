@@ -151,11 +151,11 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 			strcpy(rel_path, paths[i]);  
 			/* Is regular file */
 			if (S_ISREG(sb.st_mode)) {
-				write_header(archive, rel_path, s, 0);
+				write_header(archive, rel_path, paths[i], s, 0);
 			}
 			/* Is directory */
 			if (S_ISDIR(sb.st_mode)) {
-				write_header(archive, rel_path, s, 5); 
+				write_header(archive, rel_path, paths[i], s, 5); 
 				handle_dir(archive, rel_path, paths[i], s);
 			}
 		}
@@ -251,13 +251,13 @@ void handle_dir(int archive, char *rel_path, char *path, bool s) {
 				if (S_ISREG(sb.st_mode)) {
 					strcat(rel_path, "/"); 
 					strcat(rel_path, curr_name); 
-					write_header(archive, rel_path, s, 0);
+					write_header(archive, rel_path, curr_name, s, 0);
 				}
 				/* Is directory */
 				if (S_ISDIR(sb.st_mode)) {
 					strcat(rel_path, "/"); 
 					strcat(rel_path, curr_name);
-					write_header(archive, rel_path, s, 5);
+					write_header(archive, rel_path, curr_name, s, 5);
 					handle_dir(archive, rel_path, curr_name, s);
 				}
 				rel_path[strlen(rel_path) - 1 - strlen(curr_name)] = 0;
@@ -393,7 +393,7 @@ int calc_chksum(tar_header th) {
  @param path the path to add to the archive
  @param s the strict flag
  */
-void write_header(int archive, char *path,  bool s, int type) {
+void write_header(int archive, char *path, char *rel_path, bool s, int type) {
 	/* Used to write the header to the archive file */
 	char prefix[150];
 	char name[100]; 
@@ -402,11 +402,11 @@ void write_header(int archive, char *path,  bool s, int type) {
 	struct passwd *pw;
 	struct group *gr; 	
 	
-	if ((fdpath = open(path, O_RDONLY)) < 0) {
+	if ((fdpath = open(rel_path, O_RDONLY)) < 0) {
 		perror(path);
 		exit(EXIT_FAILURE);
 	}	
-	
+
 	/* Clears out prefix and name with null values */	
 	for (i = 0; i < 150; i++) {
 		prefix[i] = 0;
