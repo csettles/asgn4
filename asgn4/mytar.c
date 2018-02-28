@@ -155,6 +155,7 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 			}
 			/* Is directory */
 			if (S_ISDIR(sb.st_mode)) {
+				printf("%s\n", rel_path);
 				handle_dir(archive, rel_path, paths[i], s);
 			}
 		}
@@ -248,16 +249,18 @@ void handle_dir(int archive, char *rel_path, char *path, bool s) {
 			if (fstat(fd, &sb) == 0) {
 				/* Is regular file */
 				if (S_ISREG(sb.st_mode)) {
-					strcat(path, "/"); 
-					strcat(path, curr_name); 
-					write_header(archive, path, s);
+					strcat(rel_path, "/"); 
+					strcat(rel_path, curr_name); 
+					write_header(archive, rel_path, s);
 				}
 				/* Is directory */
 				if (S_ISDIR(sb.st_mode)) {
 					strcat(rel_path, "/"); 
-					strcat(rel_path, curr_name); 
-					handle_dir(archive, rel_path, path, s);
+					strcat(rel_path, curr_name);
+					printf("%s\n", rel_path); 
+					handle_dir(archive, rel_path, curr_name, s);
 				}
+				rel_path[strlen(rel_path) - 1 - strlen(curr_name)] = 0;
 			}
 			close(fd);
 		}
