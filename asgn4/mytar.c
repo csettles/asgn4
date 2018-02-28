@@ -74,10 +74,8 @@ int main(int argc, char *argv[]) {
 void list_archive(int num_paths, char **paths, bool v, bool s) {
 	/* struct passwd pd; */
 	tree files;
-	tree temp_files, prev;
-	int i, j, path_len;
-	int archive;
-	char **p;
+	tree found;
+	int i, archive;
 	
 	if ((archive = open(paths[0], O_RDONLY)) < 0) {
 		perror(paths[0]);
@@ -93,33 +91,12 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 	}
 	
 	for (i = 0; i < num_paths; i++) {
-		temp_files = prev = files;
-		p = split_path(paths[i]);
-		path_len = path_length(p);
-		
-		for (j = 0; j < path_len; j++, p++) {
-			if (temp_files != NULL) {
-				while (temp_files) {
-					if (strcmp(temp_files->file_name, *p) == 0) {
-						/* Found the correct path */
-						prev = temp_files;
-						temp_files = temp_files->child; /* descend into directory */
-						break; /* go to new path component */
-					} else {
-						prev = temp_files;
-						temp_files = temp_files->sibling;
-					}
-				}
-			} else {
-				break;
-			}
-		}
-		/* temp_file should now point to correct subdirectory/file */
-		if (prev == NULL) {
-			fprintf(stderr, "nonexistant path\n");
+		found = find_node(files, paths[i]);
+		if (found == NULL) {
+			fprintf(stderr, "%s: nonexistant path\n", paths[i]);
 			continue;
 		}
-		print_tree(prev, v);
+		print_tree(found, v);
 	}
 	
 	close(archive);
@@ -176,9 +153,8 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 
 void extract_archive(int num_paths, char **paths, bool v, bool s) {
 	/* Used to extract from an archive, recreating the files correctly */
-	int i, fd;
-	tree files;
-	int archive;
+	int i, archive;
+	tree files, curr;
 	
 	if ((archive = open(paths[0], O_RDONLY)) < 0) {
 		perror(paths[0]);
@@ -195,15 +171,75 @@ void extract_archive(int num_paths, char **paths, bool v, bool s) {
 		/* Unpack entire tree */
 	}
 	for (i = 0; i < num_paths; i++) {
-		if (!(fd = open(paths[i], O_RDONLY))) {
-			perror(paths[i]);
-			exit(EXIT_FAILURE);
+		curr = find_node(files, paths[i]);
+		if (curr == NULL) {
+			fprintf(stderr, "%s: nonexistant path\n", paths[i]);
+			continue;
 		}
-		/* Go through dir traversal and find path */
+		extract_paths(curr, v);
 	}
 	
 	close(archive);
 	return;
+}
+
+void extract_paths(tree n, bool v) {
+	tree curr;
+	if (n == NULL) {
+		return;
+	}
+	
+	curr = n;
+	while (curr != NULL) {
+		if (v) {
+			/* print file name */
+			print_name(&curr->th);
+		}
+		make_path(curr);
+		if (is_dir(curr)) {
+			chdir(n->file_name); /* change directories into file */
+			extract_paths(curr->child, v);
+			chdir("..");
+		}
+		curr = curr->sibling;
+	}
+}
+
+void make_path(tree node) {
+	int fd;
+	mode_t mode;
+	time_t mtime;
+	struct timeval t[2];
+	
+	mode = strtol((char *)node->th.mode, NULL, 8);
+	mtime = strtol((char *)node->th.mtime, NULL, 8);
+	
+	if (mode & S_IXUSR || mode & S_IXGRP || mode & S_IXOTH) {
+		/* if execute given to anyone, execute given to all per
+		 assignment spec */
+		mode = 0777;
+	} else {
+		/* otherwise, read and write permission to everyone! */
+		mode = 0666;
+	}
+	
+	if (is_dir(node)) {
+		mkdir(node->file_name, mode);
+	} else {
+		if (!(fd = open(node->file_name,
+				O_WRONLY | O_CREAT | O_TRUNC, mode))) {
+			perror(node->file_name);
+			exit(EXIT_FAILURE);
+		}
+		/* TODO: WRITE FILE DATA HERE */
+		close(fd);
+	}
+	
+	t[0].tv_sec = time(NULL);
+	t[0].tv_usec = 0;
+	t[1].tv_sec = mtime;
+	t[1].tv_usec = 0;
+	utimes(node->file_name, t); /* restore modification time */
 }
 
 /**
@@ -291,11 +327,6 @@ tree build_dir_tree(int archive, bool s) {
 		full_path[len] = '/';
 		strcpy(full_path + len + 1, (char *)th->name);
 		
-		if (!valid_header(*th)) {
-			fprintf(stderr, "pack_header: malformed header found\n");
-			break;
-		}
-		
 		headers = build_tree(headers, full_path, th);
 	}
 	
@@ -338,6 +369,19 @@ tar_header *pack_header(int fd, bool s) {
 	memcpy(&th->devmajor, buf + 329, 8);
 	memcpy(&th->devminor, buf + 337, 8);
 	memcpy(&th->prefix, buf + 345, 155);
+	
+	if (s) {
+		if (strcmp((char *)th->magic, "ustar") != 0 ||
+		    strncmp((char *)th->version, "00", 2) != 0) {
+			fprintf(stderr, "pack_header: malformed header found\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+	
+	if (!valid_header(*th)) {
+		fprintf(stderr, "pack_header: malformed header found\n");
+		exit(EXIT_FAILURE);
+	}
 	
 	file_size = (int)strtol((char *)th->size, NULL, 8);
 	

@@ -156,6 +156,38 @@ tree build_tree(tree root, char *curr_path, tar_header *th) {
 	return root;
 }
 
+tree find_node(tree n, char *path) {
+	tree curr, prev;
+	char **p;
+	int path_len, i;
+	
+	curr = prev = n;
+	p = split_path(path);
+	path_len = path_length(p);
+	
+	for (i = 0; i < path_len; i++, p++) {
+		if (curr != NULL) {
+			while (curr) {
+				if (strcmp(curr->file_name,
+					   *p) == 0) {
+					/* Found the correct path */
+					prev = curr;
+					curr = curr->child;
+					break; /* descend */
+				} else {
+					prev = curr;
+					curr = curr->sibling;
+				}
+			}
+		} else {
+			break;
+		}
+	}
+	/* temp_file should now point to correct subdirectory/file */
+	
+	return prev;
+}
+
 /* Determines if a path is a child of a node */
 int is_child(tree root, char *path) {
 	root = root->child;

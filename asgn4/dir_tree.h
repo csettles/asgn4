@@ -43,6 +43,8 @@ struct tree {
 tree create_node(char *path, tar_header *data);
 tree add_child(tree n, char *path, tar_header *data);
 tree add_sibling(tree n, char *path, tar_header *data);
+bool is_dir(tree n);
+tree find_node(tree n, char *path);
 
 tree build_tree(tree root, char *curr_path, tar_header *th); 
 int is_child(tree root, char *path);
