@@ -129,9 +129,8 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 
 void create_archive(int num_paths, char **paths, bool v, bool s) {
 	/* Used to create archive by reading in paths and generating headers **/
-	int i, fd;
+	int i, archive;
 	struct stat sb;
-	int archive;
 	char rel_path[2048];
 	
 	if ((archive = open(paths[0], O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0) {
@@ -150,24 +149,26 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 	
 	/* If made to here, correctly found tar file and found at least one path input */
 	for (i = 0; i < num_paths; i++) {
-		if (!(fd = open(paths[i], O_RDONLY))) {
-			perror(paths[i]);
-			exit(EXIT_FAILURE);
-		}
-		if (fstat(fd, &sb) == 0) {
+		if (lstat(paths[i], &sb) == 0) {
 			memset(rel_path, 0, strlen(rel_path));
 			strcpy(rel_path, paths[i]);  
 			/* Is regular file */
 			if (S_ISREG(sb.st_mode)) {
 				write_header(archive, rel_path, paths[i], s, 0);
 			}
+			/* Is symlink */
+			if (S_ISLNK(sb.st_mode)) {
+				write_header(archive, rel_path, paths[i], s, 2); 	
+			}
 			/* Is directory */
 			if (S_ISDIR(sb.st_mode)) {
 				write_header(archive, rel_path, paths[i], s, 5); 
 				handle_dir(archive, rel_path, paths[i], s);
 			}
+		} else {
+			perror(paths[i]);
+			continue; 
 		}
-		close(fd); 
 	}
 	
 	close(archive);
@@ -407,17 +408,12 @@ void write_header(int archive, char *path, char *rel_path, bool s, int type) {
 	char name[100];
 	unsigned int dev_major;
 	unsigned int dev_minor;   
-	int fdpath, i, j, length, chkvalue;
+	int i, j, length, chkvalue;
 	struct stat sb; 
 	struct passwd *pw;
 	struct group *gr; 
 	tar_header *th; 	
 	
-	if ((fdpath = open(rel_path, O_RDONLY)) < 0) {
-		perror(path);
-		exit(EXIT_FAILURE);
-	}	
-
 	/* Clears out prefix and name with null values */	
 	for (i = 0; i < 150; i++) {
 		prefix[i] = 0;
@@ -452,7 +448,7 @@ void write_header(int archive, char *path, char *rel_path, bool s, int type) {
 	
 	th = new_header(); 
 
-	if (fstat(fdpath, &sb) == 0) {
+	if (lstat(rel_path, &sb) == 0) {
 		memcpy(&th->name, name, 100); 
 		memcpy(&th->mode, &sb.st_mode, 8); 
 		memcpy(&th->uid, &sb.st_uid, 8);
@@ -492,8 +488,6 @@ void write_header(int archive, char *path, char *rel_path, bool s, int type) {
 		perror(path);
 		exit(EXIT_FAILURE);
 	}
-	close(fdpath);
-	
 }
 
 
