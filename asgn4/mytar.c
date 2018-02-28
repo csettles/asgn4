@@ -151,11 +151,11 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 			strcpy(rel_path, paths[i]);  
 			/* Is regular file */
 			if (S_ISREG(sb.st_mode)) {
-				write_header(archive, rel_path, s);
+				write_header(archive, rel_path, s, 0);
 			}
 			/* Is directory */
 			if (S_ISDIR(sb.st_mode)) {
-				write_header(archive, rel_path, s); 
+				write_header(archive, rel_path, s, 5); 
 				handle_dir(archive, rel_path, paths[i], s);
 			}
 		}
@@ -251,13 +251,13 @@ void handle_dir(int archive, char *rel_path, char *path, bool s) {
 				if (S_ISREG(sb.st_mode)) {
 					strcat(rel_path, "/"); 
 					strcat(rel_path, curr_name); 
-					write_header(archive, rel_path, s);
+					write_header(archive, rel_path, s, 0);
 				}
 				/* Is directory */
 				if (S_ISDIR(sb.st_mode)) {
 					strcat(rel_path, "/"); 
 					strcat(rel_path, curr_name);
-					write_header(archive, rel_path, s);
+					write_header(archive, rel_path, s, 5);
 					handle_dir(archive, rel_path, curr_name, s);
 				}
 				rel_path[strlen(rel_path) - 1 - strlen(curr_name)] = 0;
@@ -393,27 +393,31 @@ int calc_chksum(tar_header th) {
  @param path the path to add to the archive
  @param s the strict flag
  */
-void write_header(int archive, char *path,  bool s) {
+void write_header(int archive, char *path,  bool s, int type) {
 	/* Used to write the header to the archive file */
 	char prefix[150];
 	char name[100]; 
-	int char_count = 0; 
-	int fd, i, j, length;
+	int fdpath, i, j, length;
+	struct stat sb; 
+	struct passwd *pw;
+	struct group *gr; 	
 	
-	if (!(fd = open(path, O_RDONLY))) {
-        	perror(path);
-                exit(EXIT_FAILURE);
-        }
+	if ((fdpath = open(path, O_RDONLY)) < 0) {
+		perror(path);
+		exit(EXIT_FAILURE);
+	}	
 	
+	/* Clears out prefix and name with null values */	
 	for (i = 0; i < 150; i++) {
 		prefix[i] = 0;
 	}
 	for (i = 0; i < 100; i++) {
 		name[i] = 0; 
 	}
-
+	
+	/* Determines how to split name and prefix */
 	length = strlen(path);
-	char_count = length; 
+	/* If over 100 chars, need to split */
 	if (length >= 100) {
 		for (i = 99; i >= 0; i--) {
 			if (path[i] == '/') {
@@ -423,21 +427,45 @@ void write_header(int archive, char *path,  bool s) {
 		/* i now holds the spot of the last / */
 		for (j = 0; j < length; j++) {
 			if (j < i) {
-				prefix[j] = path[i];
+				prefix[j] = path[j];
 			} else {
-				name[j-i] = path[i]; 
+				name[j-i] = path[j]; 
 			}
 		}	
+	/* If under 100 chars, prefix is NUL */
 	} else {
 		for (i = 0; i < length; i++) {
 			name[i] = path[i];
 		}
 	}
-
-	printf("%s\n", name);
-	printf("%s\n", prefix);
-	printf("%d\n", char_count);
-	printf("\n"); 
+	archive = 1;
+	if (fstat(fdpath, &sb) == 0) {
+		write(archive, name, 100); 
+		write(archive, &sb.st_mode, 8); 
+		write(archive, &sb.st_uid, 8);
+		write(archive, &sb.st_gid, 8); 
+		write(archive, &sb.st_size, 12);
+		write(archive, &sb.st_mtime, 12);
+		write(archive, "      ", 8); /*Gotta do check sum */
+		write(archive, &type, 1); 
+		write(archive, "ustar", 6);
+		write(archive, "00", 2);
+		
+		pw = getpwuid(sb.st_uid); 
+		gr = getgrgid(sb.st_gid);
+	
+		write(archive, pw->pw_name, 32);
+		write(archive, gr->gr_name, 32);
+		write(archive, &sb.st_dev, 8);/* Not sure about this */
+		write(archive, &sb.st_dev, 8);/* Not sure about this */ 
+		write(archive, prefix, 150);
+	} else {
+		perror(path);
+		exit(EXIT_FAILURE);
+	}
+	printf("\n");
+	close(fdpath);
+	
 }
 
 int sum_of_string(const uint8_t *s, int length) {
