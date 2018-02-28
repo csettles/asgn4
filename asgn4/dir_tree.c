@@ -206,7 +206,7 @@ void print_header(tar_header *th, bool v) {
 	char time[16];
 	
 	if (!v) {
-		print_file(th);
+		print_name(th);
 		return;
 	}
 	
@@ -236,18 +236,18 @@ void print_header(tar_header *th, bool v) {
 	printf((file_mode & S_IXOTH) ? "x" : "-");
 	
 	/*print owner/group name */
-	if (!(pd = getpwuid(uid)) || !(gd = getgrgid(gid))) {
-		fprintf(stderr, "owner not found\n");
-		exit(EXIT_FAILURE);
-	}
+//	if (!(pd = getpwuid(uid)) || !(gd = getgrgid(gid))) {
+//		fprintf(stderr, "owner not found\n");
+//		exit(EXIT_FAILURE);
+//	}
 	
-	if (strlen(pd->pw_name) >= 17) {
-		printf(" %17s", pd->pw_name);
+	if (strlen(th->uname) >= 17) {
+		printf(" %17s", th->uname);
 	} else {
-		printf(" %-*s/%-*s", (int)strlen(pd->pw_name),
-		       pd->pw_name,
-		       17 - 1 - (int)strlen(pd->pw_name),
-		       gd->gr_name);
+		printf(" %-*s/%-*s", (int)strlen(th->uname),
+		       th->uname,
+		       17 - 1 - (int)strlen(th->gname),
+		       th->gname);
 	}
 	
 	/* print size in bytes */
@@ -263,7 +263,7 @@ void print_header(tar_header *th, bool v) {
 	
 	/* print file name */
 	printf(" ");
-	print_file(th);
+	print_name(th);
 	
 	printf("\n");
 }
@@ -306,7 +306,7 @@ void print_tree_helper(tree n, bool v) {
 
  @param th the tar header to print
  */
-void print_node(tar_header *th) {
+void print_name(tar_header *th) {
 	if (strlen((const char *)th->prefix) > 0) {
 		printf("%s/%s", th->prefix, th->name);
 	} else {

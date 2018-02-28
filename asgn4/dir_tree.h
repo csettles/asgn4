@@ -54,7 +54,7 @@ void print_tree_helper(tree n, bool v);
 
 tar_header *new_header(void);
 void print_header(tar_header *th, bool v);
-void print_file(tar_header *th);
+void print_name(tar_header *th);
 
 bool starts_with(char *pre, char *s);
 
