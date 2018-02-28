@@ -121,28 +121,36 @@ tree build_tree(tree root, char *curr_path, tar_header *th) {
 	curr = prev = root;
 	/* If more things, must be a sub directory */
 	while(*path_components) {
-		while (curr != NULL) {
-			if (strcmp(curr->file_name, *path_components) == 0) {
-				/* Found the correct path */
-				path_components++;
-				prev = curr;
-				curr = curr->child; /* descend into directory */
-				found = true;
-				break; /* go to new path component */
-			} else {
-				prev = curr;
-				curr = curr->sibling;
+		if (curr != NULL) {
+			while (curr != NULL) {
+				if (strcmp(curr->file_name, *path_components) == 0) {
+					/* Found the correct path */
+					path_components++;
+					prev = curr;
+					curr = curr->child; /* descend into directory */
+					found = true;
+					break; /* go to new path component */
+				} else {
+					prev = curr;
+					curr = curr->sibling;
+				}
+				
 			}
-			
+			if (found && curr == NULL) {
+				found = false;
+				curr = add_child(prev, *path_components, th);
+				path_components++;
+			} else if (found && curr != NULL) {
+				found = false;
+				continue;
+			} else {
+				curr = add_sibling(prev, *path_components, th);
+				path_components++;
+			}
+		} else {
+			curr = add_sibling(prev, *path_components, th);
+			path_components++;
 		}
-		if (found) {
-			found = false;
-			continue;
-		}
-		/* directory not found */
-		curr = add_sibling(prev, *path_components, th);
-		curr = curr->child;
-		path_components++;
 	}
 	
 	return root;

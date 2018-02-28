@@ -74,8 +74,8 @@ int main(int argc, char *argv[]) {
 void list_archive(int num_paths, char **paths, bool v, bool s) {
 	/* struct passwd pd; */
 	tree files;
-	tree temp_files;
-	int i, j;
+	tree temp_files, prev;
+	int i, j, path_len;
 	int archive;
 	char **p;
 	
@@ -93,25 +93,33 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 	}
 	
 	for (i = 0; i < num_paths; i++) {
-		temp_files = files;
+		temp_files = prev = files;
 		p = split_path(paths[i]);
+		path_len = path_length(p);
 		
-		for (j = 0; j < path_length(p); j++) {
-			while (temp_files) {
-				if (strcmp(temp_files->file_name, p[j]) == 0) {
-					temp_files = temp_files->child;
-					break; /* stop looking @ siblings
-						   and descend */
+		for (j = 0; j < path_len; j++, p++) {
+			if (temp_files != NULL) {
+				while (temp_files) {
+					if (strcmp(temp_files->file_name, *p) == 0) {
+						/* Found the correct path */
+						prev = temp_files;
+						temp_files = temp_files->child; /* descend into directory */
+						break; /* go to new path component */
+					} else {
+						prev = temp_files;
+						temp_files = temp_files->sibling;
+					}
 				}
-				temp_files = temp_files->sibling;
-			}
-			if (temp_files == NULL) {
-				fprintf(stderr, "nonexistant path\n");
+			} else {
 				break;
 			}
 		}
 		/* temp_file should now point to correct subdirectory/file */
-		print_tree(temp_files, v);
+		if (prev == NULL) {
+			fprintf(stderr, "nonexistant path\n");
+			continue;
+		}
+		print_tree(prev, v);
 	}
 	
 	close(archive);
