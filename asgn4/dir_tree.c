@@ -352,7 +352,6 @@ void print_name(tar_header *th) {
 		printf("%s/%s", th->prefix, th->name);
 	} else {
 		/* For some reason his tests only print the first 100.. idk? */ 
-		printf("%.*s", 100, th->name);
+		printf("%-*s", 100, th->name);
 	}
-	printf("\n");
 }

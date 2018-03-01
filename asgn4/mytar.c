@@ -241,7 +241,8 @@ void extract_paths(tree n, bool v) {
  @param node the node to "make" on the filesystem
  */
 void make_path(tree node) {
-	int fd;
+	int fd, file_size;
+	char *buffer;
 	mode_t mode;
 	time_t mtime;
 	struct timeval t[2];
@@ -267,6 +268,14 @@ void make_path(tree node) {
 			exit(EXIT_FAILURE);
 		}
 		/* TODO: WRITE FILE DATA HERE */
+		file_size = (int)strtol((char *)node->th.size, NULL, 8);
+		buffer = (char*) safe_calloc(file_size * sizeof(char), sizeof(char));
+		
+		/* file_content null here? */
+		strcpy(buffer, (char *)node->th.file_content);
+		write(fd, buffer, file_size);
+		close(fd);
+		free(buffer);
 		/* write link name if link */
 		close(fd);
 	}
@@ -402,6 +411,7 @@ tar_header *pack_header(int fd, bool s) {
 	/* do something with ustar??? */
 	int file_size, offset;
 	tar_header *th;
+	char *temp_content;
 	uint8_t buf[512]; /* last 12 bytes are null */
 	
 	th = new_header();
@@ -445,6 +455,21 @@ tar_header *pack_header(int fd, bool s) {
 	}
 	
 	file_size = (int)strtol((char *)th->size, NULL, 8);
+	
+	temp_content = (char *)safe_calloc(file_size, sizeof(char));
+//	lseek(fd, 512, SEEK_SET);
+	
+	if (read(fd, temp_content, file_size) == file_size) {
+		printf("%s\n", temp_content);
+		/* temp_content has the CORRECT content here */
+		memcpy(&th->file_content, temp_content, file_size);
+	} else {
+		perror("Read");
+		exit(EXIT_FAILURE);
+	}
+	
+	free(temp_content);
+	
 	/* round up to multiple of 512 */
 	offset = file_size + BLK_SIZE - file_size % BLK_SIZE;
 	
@@ -671,7 +696,7 @@ void write_entry(int archive, char *buf, char *path, size_t size, char type) {
 			fprintf(stderr, "file contents too short.\n");
 			exit(EXIT_FAILURE);
 		}
-		    
+		
 		write(archive, contents, num_bytes);
 		close(fd);
 		free(contents);
