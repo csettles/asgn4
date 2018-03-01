@@ -269,9 +269,10 @@ void make_path(tree node) {
         }
         /* TODO: WRITE FILE DATA HERE */
 	file_size = (int)strtol((char *)node->th.size, NULL, 8);
-	buffer = (char*) safe_calloc(file_size, sizeof(char));
+	buffer = (char*) safe_calloc(file_size * sizeof(char), sizeof(char));
 	
-	printf("%s\n", node->th.file_content);		
+	/* file_content null here? */	
+	strcpy(buffer, (char *)node->th.file_content);
 	write(fd, buffer, file_size);
         close(fd);
         free(buffer);
@@ -383,7 +384,7 @@ tree build_dir_tree(int archive, bool s) {
     tree headers = NULL;
     
     while ((th = pack_header(archive, s)) != NULL) {
-        len = (int)strlen((char *)th->prefix);
+	len = (int)strlen((char *)th->prefix);
         strcpy(full_path, (char *)th->prefix);
         full_path[len] = '/';
         strcpy(full_path + len + 1, (char *)th->name);
@@ -457,13 +458,13 @@ tar_header *pack_header(int fd, bool s) {
     
     file_size = (int)strtol((char *)th->size, NULL, 8);
     
-    temp_content = (char*)safe_malloc(file_size * sizeof(char)); 
-    th->file_content = (char*)safe_malloc(file_size * sizeof(char));
+    temp_content = (char*)safe_calloc(file_size * sizeof(char), sizeof(char)); 
     lseek(fd, 512, SEEK_SET); 
     
     if (read(fd, temp_content, file_size) >= 0) { 
 	printf("%s\n", temp_content);
-	strcpy(th->file_content, temp_content);    
+	/* temp_content has the CORRECT content here */ 
+	memcpy(&th->file_content, temp_content, file_size);    
     } else {
 	perror("Read"); 
 	exit(EXIT_FAILURE);
