@@ -118,7 +118,7 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 	struct stat sb;
 	char rel_path[2048];
 	
-	if ((archive = open(paths[0], O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0) {
+	if ((archive = open(paths[0], O_WRONLY | O_CREAT | O_TRUNC, 0644)) < 0){
 		perror(paths[0]);
 		exit(EXIT_FAILURE);
 	}
@@ -132,14 +132,15 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 		exit(EXIT_FAILURE);
 	}
 	
-	/* If made to here, correctly found tar file and found at least one path input */
+	/* If made to here, correctly found tar file and one path input */
 	for (i = 0; i < num_paths; i++) {
 		if (lstat(paths[i], &sb) == 0) {
 			memset(rel_path, 0, strlen(rel_path));
 			strcpy(rel_path, paths[i]);  
 			/* Is regular file */
 			if (S_ISREG(sb.st_mode)) {
-				write_header(archive, rel_path, paths[i], s, '0');
+				write_header(archive, rel_path, 
+						paths[i], s, '0');
 			}
 			/* Is symlink */
 			if (S_ISLNK(sb.st_mode)) {
@@ -147,8 +148,10 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 			}
 			/* Is directory */
 			if (S_ISDIR(sb.st_mode)) {
-				write_header(archive, rel_path, paths[i], s, '5'); 
-				handle_dir(archive, rel_path, paths[i], s);
+				write_header(archive, rel_path, 
+						paths[i], s, '5'); 
+				handle_dir(archive, rel_path, 
+						paths[i], s);
 			}
 		} else {
 			perror(paths[i]);
@@ -305,6 +308,8 @@ void handle_dir(int archive, char *rel_path, char *path, bool s) {
 	struct dirent *dir;
 	struct stat sb;
 	
+	int length_rel;
+	int length_curr;  	
 	char *curr_name;
 	
 	/* Opens current directory */
@@ -314,7 +319,8 @@ void handle_dir(int archive, char *rel_path, char *path, bool s) {
 	if (d != NULL) {
 		while((dir = readdir(d)) != NULL) {
 			curr_name = dir->d_name;
-			if (!strcmp(curr_name,".") || !strcmp(curr_name,"..")) {
+			if (!strcmp(curr_name,".") 
+				|| !strcmp(curr_name,"..")) {
 				continue;
 			}
 			if (lstat(curr_name, &sb) == 0) {
@@ -322,22 +328,28 @@ void handle_dir(int archive, char *rel_path, char *path, bool s) {
 				if (S_ISREG(sb.st_mode)) {
 					strcat(rel_path, "/"); 
 					strcat(rel_path, curr_name); 
-					write_header(archive, rel_path, curr_name, s, '0');
+					write_header(archive, rel_path,
+							curr_name, s, '0');
 				}
 				/* Is symblink */
 				if (S_ISLNK(sb.st_mode)) {
 					strcat(rel_path, "/");
 					strcat(rel_path, curr_name); 
-					write_header(archive, rel_path, curr_name, s, '2');
+					write_header(archive, rel_path, 
+							curr_name, s, '2');
 				}
 				/* Is directory */
 				if (S_ISDIR(sb.st_mode)) {
 					strcat(rel_path, "/"); 
 					strcat(rel_path, curr_name);
-					write_header(archive, rel_path, curr_name, s, '5');
-					handle_dir(archive, rel_path, curr_name, s);
+					write_header(archive, rel_path, 
+							curr_name, s, '5');
+					handle_dir(archive, rel_path, 
+							curr_name, s);
 				}
-				rel_path[strlen(rel_path) - 1 - strlen(curr_name)] = 0;
+				length_rel = strlen(rel_path); 
+				length_curr = strlen(curr_name); 
+				rel_path[length_rel - 1 - length_curr] = 0;
 			}
 		}
 	}
@@ -354,7 +366,7 @@ void handle_dir(int archive, char *rel_path, char *path, bool s) {
  @return the fully built directory tree
  */
 tree build_dir_tree(int archive, bool s) {
-	/* This needs to build entire directory tree, and then we can traverse it */
+	/* Needs to build directory tree, and then we can traverse it */
 	struct stat;
 	tar_header *th;
 	char full_path[255];
@@ -422,7 +434,8 @@ tar_header *pack_header(int fd, bool s) {
 	if (s) {
 		if (strcmp((char *)th->magic, "ustar") != 0 ||
 		    strncmp((char *)th->version, "00", 2) != 0) {
-			fprintf(stderr, "pack_header: malformed header found\n");
+			fprintf(stderr, 
+				"pack_header: malformed header found\n");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -545,7 +558,8 @@ void write_header(int archive, char *path, char *rel_path, bool s, char type) {
 		}
 		/* Couldn't find a split point */
 		if (i < 0) {
-			fprintf(stderr, "%s: File name too long, skipping.\n", path); 
+			fprintf(stderr,"%s: File name too long, skipping.\n",
+				 path); 
 			return; 
 		}        
 		/* i now holds the spot of the last / */
@@ -672,7 +686,6 @@ void fill_with_null(int archive, int total_filled) {
 	char null = '\0';
 	
 	space_left = BLK_SIZE - (total_filled%BLK_SIZE);
-	
 	for (i = 0; i < space_left; i++) {
 		write(archive, &null, 1);
 	}

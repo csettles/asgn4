@@ -26,6 +26,7 @@
 #include <sys/time.h>
 
 #include "dir_tree.h"
+#include "mem.h"
 
 /* create_archive() */
 void create_archive(int num_paths, char **paths, bool v, bool s);

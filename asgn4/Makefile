@@ -3,7 +3,10 @@ CFLAGS = -Wall -ansi -pedantic -g
 all: mem.o mytar.o dir_tree.o
 	gcc $(CFLAGS) -o mytar $^
 
-mytar.o: mytar.c
+mytar: mytar.c mem.c array_list.c dir_tree.c
+	
+	gcc $(CFLAGS) -c $<
+mytar.o: mytar.c 
 	gcc $(CFLAGS) -c $<
 
 mem.o: mem.c
