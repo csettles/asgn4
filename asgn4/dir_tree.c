@@ -12,7 +12,7 @@ tree create_node(char *path, tar_header *data) {
 	
 	t = safe_malloc(sizeof(struct tree));
 	
-	t->file_name = safe_malloc(strlen(path));
+	t->file_name = safe_malloc(strlen(path) + 1);
 	strcpy(t->file_name, path);
 	
 	t->th = *data;
