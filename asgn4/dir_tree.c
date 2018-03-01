@@ -356,4 +356,5 @@ void print_name(tar_header *th) {
 		/* For some reason his tests only print the first 100.. idk? */ 
 		printf("%.*s", 100, th->name);
 	}
+	printf("\n");
 }
