@@ -123,11 +123,12 @@ tree build_tree(tree root, char *curr_path, tar_header *th) {
 	while(*path_components) {
 		if (curr != NULL) {
 			while (curr != NULL) {
-				if (strcmp(curr->file_name, *path_components) == 0) {
+				if (strcmp(curr->file_name, 
+					*path_components) == 0) {
 					/* Found the correct path */
 					path_components++;
 					prev = curr;
-					curr = curr->child; /* descend into directory */
+					curr = curr->child; /* descend  */
 					found = true;
 					break; /* go to new path component */
 				} else {
@@ -206,7 +207,8 @@ char **split_path(char *curr_path) {
 	
 	char *curr_word = strtok(curr_path, "/");
 	while(curr_word) {
-		path_parts = safe_realloc(path_parts, sizeof(char*) * ++n_words);
+		path_parts = safe_realloc(path_parts
+				, sizeof(char*) * ++n_words);
 		path_parts[n_words-1] = curr_word;
 		curr_word = strtok(NULL, "/");
 		
