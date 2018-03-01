@@ -139,15 +139,15 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 			strcpy(rel_path, paths[i]);  
 			/* Is regular file */
 			if (S_ISREG(sb.st_mode)) {
-				write_header(archive, rel_path, paths[i], s, 0);
+				write_header(archive, rel_path, paths[i], s, '0');
 			}
 			/* Is symlink */
 			if (S_ISLNK(sb.st_mode)) {
-				write_header(archive, rel_path, paths[i], s, 2); 	
+				write_header(archive, rel_path, paths[i], s, '2'); 	
 			}
 			/* Is directory */
 			if (S_ISDIR(sb.st_mode)) {
-				write_header(archive, rel_path, paths[i], s, 5); 
+				write_header(archive, rel_path, paths[i], s, '5'); 
 				handle_dir(archive, rel_path, paths[i], s);
 			}
 		} else {
@@ -155,7 +155,7 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 			continue; 
 		}
 	}
-	
+	write(archive, "\0\0", 2); 
 	close(archive);
 	return;
 }
@@ -321,19 +321,19 @@ void handle_dir(int archive, char *rel_path, char *path, bool s) {
 				if (S_ISREG(sb.st_mode)) {
 					strcat(rel_path, "/"); 
 					strcat(rel_path, curr_name); 
-					write_header(archive, rel_path, curr_name, s, 0);
+					write_header(archive, rel_path, curr_name, s, '0');
 				}
 				/* Is symblink */
 				if (S_ISLNK(sb.st_mode)) {
 					strcat(rel_path, "/");
 					strcat(rel_path, curr_name); 
-					write_header(archive, rel_path, curr_name, s, 2);
+					write_header(archive, rel_path, curr_name, s, '2');
 				}
 				/* Is directory */
 				if (S_ISDIR(sb.st_mode)) {
 					strcat(rel_path, "/"); 
 					strcat(rel_path, curr_name);
-					write_header(archive, rel_path, curr_name, s, 5);
+					write_header(archive, rel_path, curr_name, s, '5');
 					handle_dir(archive, rel_path, curr_name, s);
 				}
 				rel_path[strlen(rel_path) - 1 - strlen(curr_name)] = 0;
@@ -513,7 +513,7 @@ int calc_chksum(tar_header th) {
  @param path the path to add to the archive
  @param s the strict flag
  */
-void write_header(int archive, char *path, char *rel_path, bool s, int type) {
+void write_header(int archive, char *path, char *rel_path, bool s, char type) {
 	/* Used to write the header to the archive file */
 	char prefix[150];
 	char name[100];
@@ -573,7 +573,7 @@ void write_header(int archive, char *path, char *rel_path, bool s, int type) {
 		memcpy(&th->mtime, &sb.st_mtime, 12);
 		memcpy(&th->chksum, "        ", 8); /*Gotta do check sum */
 		memcpy(&th->typeflag, &type, 1); 
-		if (type == 2) {
+		if (type == '2') {
 			/* link name*/
 			memcpy(&th->linkname, "ustar", 100);
 		} else {
@@ -604,8 +604,64 @@ void write_header(int archive, char *path, char *rel_path, bool s, int type) {
 		perror(path);
 		exit(EXIT_FAILURE);
 	}
+	write_to_archive(archive, rel_path, *th, type);
 }
 
+void write_to_archive(int archive, char *path, tar_header th, char type) {
+	int file_size, fd, read_file; 
+	char *buffer; 
+
+	write(archive, th.name, 100);
+        write(archive, th.mode, 8);
+        write(archive, th.uid, 8);
+        write(archive, th.gid, 8);
+        write(archive, th.size, 12);
+        write(archive, th.mtime, 12);
+        write(archive, th.chksum, 8);
+        write(archive, th.typeflag, 1);
+        write(archive, th.linkname, 100);
+        write(archive, th.magic, 6);
+        write(archive, th.version, 2);
+        write(archive, th.uname, 32);
+        write(archive, th.gname, 32);
+        write(archive, th.devmajor, 8);
+        write(archive, th.devminor, 8);
+        write(archive, th.prefix, 150);
+		
+	/* If a file */ 
+	if (type == '0' || type == '\0') {
+		file_size = *th.size; 
+		buffer = (char*) safe_calloc(file_size, sizeof(char)); 
+		if ((fd = open(path, O_RDONLY)) < 0) {
+                	perror(path);
+                	exit(EXIT_FAILURE);
+        	}
+	
+		if ((read_file = read(fd, buffer, file_size)) == -1) {
+			perror("Read");
+			exit(EXIT_FAILURE); 
+		}
+		write(archive, buffer, file_size);
+		fill_with_null(archive, 500 + file_size); 
+		close(fd); 
+		free(buffer); 
+	/* If anything else, data will be 0, need to fill rest with \0 */ 
+	} else {
+		fill_with_null(archive, 500); 
+	}
+	
+} 
+
+/* Necesary to fill the 512 size blocks */ 
+void fill_with_null(int archive, int total_filled) {
+	int i, space_left;
+		
+	space_left = BLK_SIZE - (total_filled%BLK_SIZE);
+	
+	for (i = 0; i < space_left; i++) {
+		write(archive, '\0', 1); 
+	}
+}
 
 /**
  Helper for calc_chksum(). Adds up length bytes in the string and returns the
