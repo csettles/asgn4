@@ -307,8 +307,6 @@ void print_header(tar_header *th, bool v) {
 	/* print file name */
 	printf(" ");
 	print_name(th);
-	
-	printf("\n");
 }
 
 /**

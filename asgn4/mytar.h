@@ -32,7 +32,8 @@
 void create_archive(int num_paths, char **paths, bool v, bool s);
 void handle_dir(int archive, char *rel_path, char *path, bool s);
 void write_header(int archive, char *path, char *rel_path, bool s, char type);
-void write_to_archive(int archive, char *path, tar_header th, char type);
+void write_entry(int archive, char *buf, char *path, size_t size, char type);
+bool split_name_prefix(char *path, char *name, char *prefix);
 
 /* extract_archive() */
 void extract_archive(int num_paths, char **paths, bool v, bool s);
@@ -46,6 +47,7 @@ void list_archive(int num_paths, char **paths, bool v, bool s);
 int sum_of_string(const uint8_t *s, int length);
 bool null_block(uint8_t *buf);
 int calc_chksum(tar_header th);
+int calc_chksum_buf(char *buf);
 bool is_archive(char *path);
 bool valid_header(tar_header th);
 tree build_dir_tree(int archive, bool s);
