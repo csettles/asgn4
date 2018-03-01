@@ -268,11 +268,10 @@ void make_path(tree node) {
             exit(EXIT_FAILURE);
         }
         /* TODO: WRITE FILE DATA HERE */
-        file_size = *node->th.size; 
+	file_size = (int)strtol((char *)node->th.size, NULL, 8);
 	buffer = (char*) safe_calloc(file_size, sizeof(char));
-	printf("%d", file_size);
-	/* Why is this seg faulting?? */ 
 	
+	printf("%s\n", node->th.file_content);		
 	write(fd, buffer, file_size);
         close(fd);
         free(buffer);
@@ -409,7 +408,7 @@ tree build_dir_tree(int archive, bool s) {
 tar_header *pack_header(int fd, bool s) {
     /* each header is 500 bytes */
     /* do something with ustar??? */
-    int file_size, i;
+    int file_size;
     tar_header *th;
     char *temp_content; 
     uint8_t buf[512]; /* the last 12 bytes are data, not header */
@@ -461,8 +460,10 @@ tar_header *pack_header(int fd, bool s) {
     temp_content = (char*)safe_malloc(file_size * sizeof(char)); 
     th->file_content = (char*)safe_malloc(file_size * sizeof(char));
     lseek(fd, 512, SEEK_SET); 
-    if ((i = read(fd, temp_content, file_size)) >= 0) { 
-	memcpy(th->file_content, temp_content, file_size);    
+    
+    if (read(fd, temp_content, file_size) >= 0) { 
+	printf("%s\n", temp_content);
+	strcpy(th->file_content, temp_content);    
     } else {
 	perror("Read"); 
 	exit(EXIT_FAILURE);
@@ -473,6 +474,7 @@ tar_header *pack_header(int fd, bool s) {
     } else {
         file_size = 0;
     }
+    free(temp_content);
     
     /* maybe want to store file contents for extract? */
     lseek(fd, 512 * file_size, SEEK_CUR); /* go to next header */
