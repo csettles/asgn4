@@ -359,5 +359,4 @@ void print_name(tar_header *th) {
 	} else {
 		printf("%s", th->name);
 	}
-	printf("\n");
 }
