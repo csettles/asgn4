@@ -605,7 +605,6 @@ void fill_with_null(int archive, int total_filled) {
 	int i, space_left;
 		
 	space_left = BLK_SIZE - (total_filled%BLK_SIZE);
-	
 	for (i = 0; i < space_left; i++) {
 		write(archive, '\0', 1); 
 	}
