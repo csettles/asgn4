@@ -215,6 +215,8 @@ char **split_path(char *curr_path) {
 	char **path_parts = NULL;
 	int n_words = 0;
 	
+	path_parts = malloc(sizeof(char) * 1);
+	
 	char *curr_word = strtok(curr_path, "/");
 	while(curr_word) {
 		path_parts = safe_realloc(path_parts

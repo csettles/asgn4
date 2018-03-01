@@ -385,9 +385,16 @@ tree build_dir_tree(int archive, bool s) {
 	
 	while ((th = pack_header(archive, s)) != NULL) {
 		len = (int)strlen((char *)th->prefix);
+		
 		strcpy(full_path, (char *)th->prefix);
-		full_path[len] = '/';
-		strcpy(full_path + len + 1, (char *)th->name);
+		
+		if (th->name[0] != '/') {
+			full_path[len] = '/';
+			strcpy(full_path + len + 1, (char *)th->name);
+		} else {
+			strcpy(full_path, (char *)th->name);
+		}
+		
 		
 		headers = build_tree(headers, full_path, th);
 	}
@@ -457,22 +464,26 @@ tar_header *pack_header(int fd, bool s) {
 	file_size = (int)strtol((char *)th->size, NULL, 8);
 	
 	temp_content = (char *)safe_calloc(file_size, sizeof(char));
-//	lseek(fd, 512, SEEK_SET);
+//		lseek(fd, 512, SEEK_SET);
 	
-	if (read(fd, temp_content, file_size) == file_size) {
-		printf("%s\n", temp_content);
-		/* temp_content has the CORRECT content here */
-		memcpy(&th->file_content, temp_content, file_size);
+	if (file_size > 0) {
+		if (read(fd, temp_content, file_size) == file_size) {
+			printf("%s\n", temp_content);
+			/* temp_content has the CORRECT content here */
+			memcpy(&th->file_content, temp_content, file_size);
+		} else {
+			perror("Read");
+			exit(EXIT_FAILURE);
+		}
+		/* round up to multiple of 512 */
+//		offset = file_size + BLK_SIZE - file_size % BLK_SIZE;
+		offset = BLK_SIZE - file_size % BLK_SIZE;
 	} else {
-		perror("Read");
-		exit(EXIT_FAILURE);
+		offset = 0;
 	}
 	
+	
 	free(temp_content);
-	
-	/* round up to multiple of 512 */
-	offset = file_size + BLK_SIZE - file_size % BLK_SIZE;
-	
 	lseek(fd, offset, SEEK_CUR); /* go to next header */
 	
 	return th;
