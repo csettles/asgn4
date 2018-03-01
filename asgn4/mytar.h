@@ -31,7 +31,8 @@
 /* create_archive() */
 void create_archive(int num_paths, char **paths, bool v, bool s);
 void handle_dir(int archive, char *rel_path, char *path, bool s);
-void write_header(int archive, char *path, char *rel_path, bool s, int type);
+void write_header(int archive, char *path, char *rel_path, bool s, char type);
+void write_to_archive(int archive, char *path, tar_header th, char type);
 
 /* extract_archive() */
 void extract_archive(int num_paths, char **paths, bool v, bool s);
@@ -49,5 +50,6 @@ bool is_archive(char *path);
 bool valid_header(tar_header th);
 tree build_dir_tree(int archive, bool s);
 tar_header *pack_header(int fd, bool s);
+void fill_with_null(int archive, int spaces_full);
 
 #endif /* mytar_h */
