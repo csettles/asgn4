@@ -241,12 +241,11 @@ void extract_paths(tree n, bool v) {
  @param node the node to "make" on the filesystem
  */
 void make_path(tree node) {
-    int fd, file_size;
-    char *buffer; 
+    int fd;
     mode_t mode;
     time_t mtime;
     struct timeval t[2];
-    
+
     mode = strtol((char *)node->th.mode, NULL, 8);
     mtime = strtol((char *)node->th.mtime, NULL, 8);
     
@@ -268,15 +267,12 @@ void make_path(tree node) {
             exit(EXIT_FAILURE);
         }
         /* TODO: WRITE FILE DATA HERE */
-	file_size = (int)strtol((char *)node->th.size, NULL, 8);
-	buffer = (char*) safe_calloc(file_size * sizeof(char), sizeof(char));
-	
-	/* file_content null here? */	
-	strcpy(buffer, (char *)node->th.file_content);
-	write(fd, buffer, file_size);
-        close(fd);
-        free(buffer);
-	/* write link name if link */
+        /*file_size = (int)strtol((char *)node->th.size, NULL, 8);
+	buffer = (char*) safe_calloc((file_size + 1) * sizeof(char), 
+			sizeof(char));
+	strcpy(buffer, (char*)node->th.file_content); 
+	write(fd, buffer, file_size); 
+	*//* write link name if link */
         close(fd);
     }
     
@@ -411,9 +407,9 @@ tar_header *pack_header(int fd, bool s) {
     /* do something with ustar??? */
     int file_size;
     tar_header *th;
-    char *temp_content; 
     uint8_t buf[512]; /* the last 12 bytes are data, not header */
-    
+    /*char* temp_content;
+ 	*/
     th = new_header();
     
     if (read(fd, buf, 512) < 512) {
@@ -457,25 +453,25 @@ tar_header *pack_header(int fd, bool s) {
     }
     
     file_size = (int)strtol((char *)th->size, NULL, 8);
-    
-    temp_content = (char*)safe_calloc(file_size * sizeof(char), sizeof(char)); 
+    /*th->file_content = (char*)safe_malloc((file_size+1) * sizeof(char));  
+    temp_content = (char*)safe_malloc((file_size+1) * sizeof(char)); 
     lseek(fd, 512, SEEK_SET); 
     
     if (read(fd, temp_content, file_size) >= 0) { 
-	printf("%s\n", temp_content);
-	/* temp_content has the CORRECT content here */ 
-	memcpy(&th->file_content, temp_content, file_size);    
+	memcpy(th->file_content, temp_content, file_size);
     } else {
 	perror("Read"); 
 	exit(EXIT_FAILURE);
     }
+    free(temp_content); 
+    */
 
+	
     if ((file_size -= 12) > 0) {
         file_size = file_size / 512 + 1;
     } else {
         file_size = 0;
     }
-    free(temp_content);
     
     /* maybe want to store file contents for extract? */
     lseek(fd, 512 * file_size, SEEK_CUR); /* go to next header */
