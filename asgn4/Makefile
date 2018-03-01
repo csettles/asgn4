@@ -1,15 +1,12 @@
 CFLAGS = -Wall -ansi -pedantic -g
 
-all: mem.o mytar.o array_list.o dir_tree.o
+all: mem.o mytar.o dir_tree.o
 	gcc $(CFLAGS) -o mytar $^
 
 mytar.o: mytar.c
 	gcc $(CFLAGS) -c $<
 
 mem.o: mem.c
-	gcc $(CFLAGS) -c $<
-
-array_list.o: array_list.c
 	gcc $(CFLAGS) -c $<
 
 dir_tree.o: dir_tree.c

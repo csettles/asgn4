@@ -106,7 +106,7 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 
 /**
  Creates an archive file from the given paths.
-
+ 
  @param num_paths The number of paths to create the archive from
  @param paths the paths to archive
  @param v the verbose option
@@ -143,7 +143,7 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 			}
 			/* Is symlink */
 			if (S_ISLNK(sb.st_mode)) {
-				write_header(archive, rel_path, paths[i], s, '2'); 	
+				write_header(archive, rel_path, paths[i], s, '2');     
 			}
 			/* Is directory */
 			if (S_ISDIR(sb.st_mode)) {
@@ -163,7 +163,7 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 /**
  Extracts specified paths from an archive file, or all paths if none are
  specified.
-
+ 
  @param num_paths the number of paths to extract
  @param paths the paths to extract
  @param v the verbose option
@@ -184,8 +184,8 @@ void extract_archive(int num_paths, char **paths, bool v, bool s) {
 	files = build_dir_tree(archive, s);
 	
 	/* If not given explicit paths, take care of entire archive */
-	if (1 == num_paths) {
-		printf("%s\n", files->th.name);
+	if (0 == num_paths) {
+		extract_paths(files, v);
 		/* Unpack entire tree */
 	}
 	for (i = 0; i < num_paths; i++) {
@@ -204,7 +204,7 @@ void extract_archive(int num_paths, char **paths, bool v, bool s) {
 /**
  Traverses a directory tree and makes each path in the tree. Does a depth-first
  traversal.
-
+ 
  @param n the tree from which to create files
  @param v the verbose option
  */
@@ -219,6 +219,7 @@ void extract_paths(tree n, bool v) {
 		if (v) {
 			/* print file name */
 			print_name(&curr->th);
+			printf("\n");
 		}
 		make_path(curr);
 		if (is_dir(curr)) {
@@ -232,7 +233,7 @@ void extract_paths(tree n, bool v) {
 
 /**
  Makes a path from a tree node - can either be a link, directory, or file.
-
+ 
  @param node the node to "make" on the filesystem
  */
 void make_path(tree node) {
@@ -295,8 +296,8 @@ bool is_archive(char *path) {
  directory.
  
  @param archive the archive file
- @param path <#path description#>
- @param s <#s description#>
+ @param path the relative path to write
+ @param s the strict option
  */
 void handle_dir(int archive, char *rel_path, char *path, bool s) {
 	/* For create_archive, when given a directory to archive */
@@ -347,7 +348,7 @@ void handle_dir(int archive, char *rel_path, char *path, bool s) {
 /**
  Builds a directory tree from an archive file. Adds each file node sequentially
  found in the file.
-
+ 
  @param archive the archive file descriptor
  @param s the strict option
  @return the fully built directory tree
@@ -378,7 +379,7 @@ tree build_dir_tree(int archive, bool s) {
  Helper for build_dir_tree(). Reads 512 bytes from the file, builds 500 of those
  bytes into a tar_header struct, and then lseeks to the next header block.
  Also checks for header validity.
-
+ 
  @param fd the archive file from which to build headers
  @param s the strict option
  @return the newly created tar_header
@@ -448,7 +449,7 @@ tar_header *pack_header(int fd, bool s) {
 /**
  Determines if a "block" (512 bytes) is null, which signifies the end of
  an archive file.
-
+ 
  @param buf the buffer of 512 bytes
  @return whether the entire buffer is null or not
  */
@@ -465,7 +466,7 @@ bool null_block(uint8_t *buf) {
 
 /**
  Calculates the checksum of the header and compares against its current header.
-
+ 
  @param th the tar header to determine if valid
  @return whether header is valid
  */
@@ -479,7 +480,7 @@ bool valid_header(tar_header th) {
 /**
  Adds up every field in the header, treating all bytes as unsigned and the
  chksum field itself as 8 spaces.
-
+ 
  @param th the tar_header add up
  @return the sum of every byte in the header
  */
@@ -508,7 +509,7 @@ int calc_chksum(tar_header th) {
 
 /**
  Helper for create_archive().
-
+ 
  @param archive archive file descriptor with write permissions
  @param path the path to add to the archive
  @param s the strict flag
@@ -523,9 +524,9 @@ void write_header(int archive, char *path, char *rel_path, bool s, char type) {
 	struct stat sb; 
 	struct passwd *pw;
 	struct group *gr; 
-	tar_header *th; 	
+	tar_header *th;     
 	
-	/* Clears out prefix and name with null values */	
+	/* Clears out prefix and name with null values */    
 	for (i = 0; i < 150; i++) {
 		prefix[i] = 0;
 	}
@@ -546,7 +547,7 @@ void write_header(int archive, char *path, char *rel_path, bool s, char type) {
 		if (i < 0) {
 			fprintf(stderr, "%s: File name too long, skipping.\n", path); 
 			return; 
-		}		
+		}        
 		/* i now holds the spot of the last / */
 		for (j = 0; j < length; j++) {
 			if (j < i) {
@@ -554,8 +555,8 @@ void write_header(int archive, char *path, char *rel_path, bool s, char type) {
 			} else {
 				name[j-i] = path[j]; 
 			}
-		}	
-	/* If under 100 chars, prefix is NUL */
+		}    
+		/* If under 100 chars, prefix is NUL */
 	} else {
 		for (i = 0; i < length; i++) {
 			name[i] = path[i];
@@ -563,7 +564,7 @@ void write_header(int archive, char *path, char *rel_path, bool s, char type) {
 	}
 	
 	th = new_header(); 
-
+	
 	if (lstat(rel_path, &sb) == 0) {
 		memcpy(&th->name, name, 100); 
 		memcpy(&th->mode, &sb.st_mode, 8); 
@@ -584,22 +585,22 @@ void write_header(int archive, char *path, char *rel_path, bool s, char type) {
 		
 		pw = getpwuid(sb.st_uid); 
 		gr = getgrgid(sb.st_gid);
-	
+		
 		memcpy(&th->uname, pw->pw_name, 32);
 		memcpy(&th->gname, gr->gr_name, 32);
 		
 		dev_major = major(sb.st_rdev);
 		dev_minor = minor(sb.st_rdev); 
-
+		
 		memcpy(&th->devmajor, &dev_major, 8);/* Not sure about this */
 		memcpy(&th->devminor, &dev_minor, 8);/* Not sure about this */ 
 		memcpy(&th->prefix, prefix, 150);
-	
+		
 		chkvalue = calc_chksum(*th); 
 		
 		memcpy(&th->chksum, &chkvalue, 8);  
 		
-			
+		
 	} else {
 		perror(path);
 		exit(EXIT_FAILURE);
@@ -607,36 +608,44 @@ void write_header(int archive, char *path, char *rel_path, bool s, char type) {
 	write_to_archive(archive, rel_path, *th, type);
 }
 
+/**
+ Write an archive
+ 
+ @param archive the archive file descriptor
+ @param path the path to add to the archive
+ @param th the tar_header describing the file
+ @param type the type of the path
+ */
 void write_to_archive(int archive, char *path, tar_header th, char type) {
 	int file_size, fd, read_file; 
 	char *buffer; 
-
+	
 	write(archive, th.name, 100);
-        write(archive, th.mode, 8);
-        write(archive, th.uid, 8);
-        write(archive, th.gid, 8);
-        write(archive, th.size, 12);
-        write(archive, th.mtime, 12);
-        write(archive, th.chksum, 8);
-        write(archive, th.typeflag, 1);
-        write(archive, th.linkname, 100);
-        write(archive, th.magic, 6);
-        write(archive, th.version, 2);
-        write(archive, th.uname, 32);
-        write(archive, th.gname, 32);
-        write(archive, th.devmajor, 8);
-        write(archive, th.devminor, 8);
-        write(archive, th.prefix, 150);
-		
+	write(archive, th.mode, 8);
+	write(archive, th.uid, 8);
+	write(archive, th.gid, 8);
+	write(archive, th.size, 12);
+	write(archive, th.mtime, 12);
+	write(archive, th.chksum, 8);
+	write(archive, &th.typeflag, 1);
+	write(archive, th.linkname, 100);
+	write(archive, th.magic, 6);
+	write(archive, th.version, 2);
+	write(archive, th.uname, 32);
+	write(archive, th.gname, 32);
+	write(archive, th.devmajor, 8);
+	write(archive, th.devminor, 8);
+	write(archive, th.prefix, 150);
+	
 	/* If a file */ 
 	if (type == '0' || type == '\0') {
 		file_size = *th.size; 
 		buffer = (char*) safe_calloc(file_size, sizeof(char)); 
 		if ((fd = open(path, O_RDONLY)) < 0) {
-                	perror(path);
-                	exit(EXIT_FAILURE);
-        	}
-	
+			perror(path);
+			exit(EXIT_FAILURE);
+		}
+		
 		if ((read_file = read(fd, buffer, file_size)) == -1) {
 			perror("Read");
 			exit(EXIT_FAILURE); 
@@ -645,31 +654,37 @@ void write_to_archive(int archive, char *path, tar_header th, char type) {
 		fill_with_null(archive, 500 + file_size); 
 		close(fd); 
 		free(buffer); 
-	/* If anything else, data will be 0, need to fill rest with \0 */ 
+		/* If anything else, data will be 0, need to fill rest with \0 */ 
 	} else {
 		fill_with_null(archive, 500); 
 	}
 	
 } 
 
-/* Necesary to fill the 512 size blocks */ 
+/**
+ Helper for write_to_archive(). Fills a buffer with remaining null spaces.
+
+ @param archive the archive file descriptors
+ @param total_filled the number of spaces filled with data
+ */
 void fill_with_null(int archive, int total_filled) {
 	int i, space_left;
-		
+	char null = '\0';
+	
 	space_left = BLK_SIZE - (total_filled%BLK_SIZE);
 	
 	for (i = 0; i < space_left; i++) {
-		write(archive, '\0', 1); 
+		write(archive, &null, 1);
 	}
+	
 }
 
 /**
- Helper for calc_chksum(). Adds up length bytes in the string and returns the
- sum.
-
- @param s the string to add
- @param length how many bytes of the string to look at
- @return the sum
+ Helper for calc_chksum(). Adds up all the bytes in a string.
+ 
+ @param s the string to sum
+ @param length the length (# of bytes) to add
+ @return the sum of all bytes in the string
  */
 int sum_of_string(const uint8_t *s, int length) {
 	int i, sum = 0;

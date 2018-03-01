@@ -25,7 +25,6 @@
 #include <fcntl.h>
 #include <sys/time.h>
 
-#include "array_list.h"
 #include "dir_tree.h"
 
 /* create_archive() */
