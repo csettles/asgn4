@@ -102,8 +102,16 @@ tar_header *new_header(void) {
 	
 	return th;
 }
+ 
+/**
+ Inserts a path into the directory tree, building along the way if the path
+ does not yet exist.
 
-/* Used as a helper to build directory tree when getting headers */ 
+ @param root the root of the tree to add to
+ @param curr_path the name of the path to add
+ @param th the tar header (file data) to use
+ @return the updated directory tree
+ */
 tree build_tree(tree root, char *curr_path, tar_header *th) {
 	char **path_components;
 	int path_size;
@@ -156,6 +164,13 @@ tree build_tree(tree root, char *curr_path, tar_header *th) {
 	return root;
 }
 
+/**
+ Finds a node in a directory tree.
+
+ @param n the root of the directory tree to search
+ @param path the path of the file node to find
+ @return the found tree node or NULL if path doesn't exist
+ */
 tree find_node(tree n, char *path) {
 	tree curr, prev;
 	char **p;
@@ -188,18 +203,13 @@ tree find_node(tree n, char *path) {
 	return prev;
 }
 
-/* Determines if a path is a child of a node */
-int is_child(tree root, char *path) {
-	root = root->child;
-	while (root != NULL) {
-		if (strcmp(root->file_name,path) == 0) {
-			return 1;
-		}
-	}
-	return 0;
-}
+/**
+ Splits a path on the '/' character and replaces it with a null character.
+ It then creates an array of points to each "part" of the path.
 
-/* Splits path and grabs each part */
+ @param curr_path the path to split
+ @return an array of path parts
+ */
 char **split_path(char *curr_path) {
 	char **path_parts = NULL;
 	int n_words = 0;
@@ -217,7 +227,12 @@ char **split_path(char *curr_path) {
 	return path_parts;
 }
 
-/* Gets length of path */ 
+/**
+ Companion to split_path(). Gets the amount of path "parts" in a given path
+
+ @param path_components the array returned from split_path()
+ @return the number of components in the path
+ */
 int path_length(char **path_components) {
 	int i;
 	for (i = 0; path_components[i] != NULL; i++) {
@@ -342,8 +357,4 @@ void print_name(tar_header *th) {
 	} else {
 		printf("%s", th->name);
 	}
-}
-
-bool starts_with(char *pre, char *s) {
-	return strncmp(pre, s, strlen(pre)) == 0;
 }

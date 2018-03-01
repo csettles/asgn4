@@ -104,6 +104,14 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 	/* Need to free tree */
 }
 
+/**
+ Creates an archive file from the given paths.
+
+ @param num_paths The number of paths to create the archive from
+ @param paths the paths to archive
+ @param v the verbose option
+ @param s the strict option (no interoperability with GNU's tar)
+ */
 void create_archive(int num_paths, char **paths, bool v, bool s) {
 	/* Used to create archive by reading in paths and generating headers **/
 	int i, archive;
@@ -152,6 +160,15 @@ void create_archive(int num_paths, char **paths, bool v, bool s) {
 	return;
 }
 
+/**
+ Extracts specified paths from an archive file, or all paths if none are
+ specified.
+
+ @param num_paths the number of paths to extract
+ @param paths the paths to extract
+ @param v the verbose option
+ @param s the strict option
+ */
 void extract_archive(int num_paths, char **paths, bool v, bool s) {
 	/* Used to extract from an archive, recreating the files correctly */
 	int i, archive;
@@ -184,6 +201,13 @@ void extract_archive(int num_paths, char **paths, bool v, bool s) {
 	return;
 }
 
+/**
+ Traverses a directory tree and makes each path in the tree. Does a depth-first
+ traversal.
+
+ @param n the tree from which to create files
+ @param v the verbose option
+ */
 void extract_paths(tree n, bool v) {
 	tree curr;
 	if (n == NULL) {
@@ -206,6 +230,11 @@ void extract_paths(tree n, bool v) {
 	}
 }
 
+/**
+ Makes a path from a tree node - can either be a link, directory, or file.
+
+ @param node the node to "make" on the filesystem
+ */
 void make_path(tree node) {
 	int fd;
 	mode_t mode;
@@ -233,6 +262,7 @@ void make_path(tree node) {
 			exit(EXIT_FAILURE);
 		}
 		/* TODO: WRITE FILE DATA HERE */
+		/* write link name if link */
 		close(fd);
 	}
 	
@@ -314,6 +344,14 @@ void handle_dir(int archive, char *rel_path, char *path, bool s) {
 	chdir("..");
 }
 
+/**
+ Builds a directory tree from an archive file. Adds each file node sequentially
+ found in the file.
+
+ @param archive the archive file descriptor
+ @param s the strict option
+ @return the fully built directory tree
+ */
 tree build_dir_tree(int archive, bool s) {
 	/* This needs to build entire directory tree, and then we can traverse it */
 	struct stat;
@@ -336,6 +374,15 @@ tree build_dir_tree(int archive, bool s) {
 	return headers;
 }
 
+/**
+ Helper for build_dir_tree(). Reads 512 bytes from the file, builds 500 of those
+ bytes into a tar_header struct, and then lseeks to the next header block.
+ Also checks for header validity.
+
+ @param fd the archive file from which to build headers
+ @param s the strict option
+ @return the newly created tar_header
+ */
 tar_header *pack_header(int fd, bool s) {
 	/* each header is 500 bytes */
 	/* do something with ustar??? */
@@ -398,6 +445,13 @@ tar_header *pack_header(int fd, bool s) {
 	return th;
 }
 
+/**
+ Determines if a "block" (512 bytes) is null, which signifies the end of
+ an archive file.
+
+ @param buf the buffer of 512 bytes
+ @return whether the entire buffer is null or not
+ */
 bool null_block(uint8_t *buf) {
 	int i;
 	
@@ -409,6 +463,12 @@ bool null_block(uint8_t *buf) {
 	return true;
 }
 
+/**
+ Calculates the checksum of the header and compares against its current header.
+
+ @param th the tar header to determine if valid
+ @return whether header is valid
+ */
 bool valid_header(tar_header th) {
 	unsigned int chksum;
 	
@@ -416,6 +476,13 @@ bool valid_header(tar_header th) {
 	return calc_chksum(th) == chksum;
 }
 
+/**
+ Adds up every field in the header, treating all bytes as unsigned and the
+ chksum field itself as 8 spaces.
+
+ @param th the tar_header add up
+ @return the sum of every byte in the header
+ */
 int calc_chksum(tar_header th) {
 	unsigned int sum = 0;
 	
@@ -540,6 +607,14 @@ void write_header(int archive, char *path, char *rel_path, bool s, int type) {
 }
 
 
+/**
+ Helper for calc_chksum(). Adds up length bytes in the string and returns the
+ sum.
+
+ @param s the string to add
+ @param length how many bytes of the string to look at
+ @return the sum
+ */
 int sum_of_string(const uint8_t *s, int length) {
 	int i, sum = 0;
 	for (i = 0; i < length; i++) {

@@ -10,7 +10,6 @@
 		84144D22203B943D00D4AA34 /* mytar.c in Sources */ = {isa = PBXBuildFile; fileRef = 84144D21203B943D00D4AA34 /* mytar.c */; };
 		84144D2B203B9B0F00D4AA34 /* mem.c in Sources */ = {isa = PBXBuildFile; fileRef = 84144D2A203B9B0F00D4AA34 /* mem.c */; };
 		84144D2D203B9B8500D4AA34 /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = 84144D2C203B9B8500D4AA34 /* Makefile */; };
-		84262CBB203CD90B00090ECA /* array_list.c in Sources */ = {isa = PBXBuildFile; fileRef = 84262CBA203CD90B00090ECA /* array_list.c */; };
 		847C53502043DA3900AE5532 /* dir_tree.c in Sources */ = {isa = PBXBuildFile; fileRef = 847C534F2043DA3900AE5532 /* dir_tree.c */; };
 /* End PBXBuildFile section */
 
@@ -34,8 +33,6 @@
 		84144D2A203B9B0F00D4AA34 /* mem.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = mem.c; sourceTree = "<group>"; };
 		84144D2C203B9B8500D4AA34 /* Makefile */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		84144D2E203B9D3100D4AA34 /* README */ = {isa = PBXFileReference; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
-		84262CB9203CD90B00090ECA /* array_list.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = array_list.h; sourceTree = "<group>"; };
-		84262CBA203CD90B00090ECA /* array_list.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = array_list.c; sourceTree = "<group>"; };
 		847C534E2043DA3900AE5532 /* dir_tree.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = dir_tree.h; sourceTree = "<group>"; };
 		847C534F2043DA3900AE5532 /* dir_tree.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = dir_tree.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -72,8 +69,6 @@
 			children = (
 				84144D28203B947700D4AA34 /* mytar.h */,
 				84144D21203B943D00D4AA34 /* mytar.c */,
-				84262CB9203CD90B00090ECA /* array_list.h */,
-				84262CBA203CD90B00090ECA /* array_list.c */,
 				84144D29203B9B0F00D4AA34 /* mem.h */,
 				84144D2A203B9B0F00D4AA34 /* mem.c */,
 				847C534F2043DA3900AE5532 /* dir_tree.c */,
@@ -145,7 +140,6 @@
 				84144D22203B943D00D4AA34 /* mytar.c in Sources */,
 				847C53502043DA3900AE5532 /* dir_tree.c in Sources */,
 				84144D2B203B9B0F00D4AA34 /* mem.c in Sources */,
-				84262CBB203CD90B00090ECA /* array_list.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

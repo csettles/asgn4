@@ -47,7 +47,6 @@ bool is_dir(tree n);
 tree find_node(tree n, char *path);
 
 tree build_tree(tree root, char *curr_path, tar_header *th); 
-int is_child(tree root, char *path);
 int path_length(char **path_components); 
 char ** split_path(char *curr_path);
 
@@ -57,7 +56,5 @@ void print_tree_helper(tree n, bool v);
 tar_header *new_header(void);
 void print_header(tar_header *th, bool v);
 void print_name(tar_header *th);
-
-bool starts_with(char *pre, char *s);
 
 #endif 
