@@ -252,8 +252,6 @@ int path_length(char **path_components) {
  */
 void print_header(tar_header *th, bool v) {
 	int size;
-	uid_t uid;
-	gid_t gid;
 	time_t mtime;
 	mode_t file_mode;
 	char time[17];
@@ -264,8 +262,6 @@ void print_header(tar_header *th, bool v) {
 	}
 	
 	/* these won't fail because max is 8^8 */
-	uid = (int)strtol((const char *)th->uid, NULL, 8);
-	gid = (int)strtol((const char *)th->gid, NULL, 8);
 	file_mode = (int)strtol((const char *)th->mode, NULL, 8);
 	size = (int)strtol((const char *)th->size, NULL, 8);
 	mtime = strtol((const char *)th->mtime, NULL, 8);
