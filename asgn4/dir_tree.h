@@ -30,6 +30,7 @@ struct tar_header {
     uint8_t devmajor[8];
     uint8_t devminor[8];
     uint8_t prefix[155];  /* NULL terminated only if NULL fits */
+    char *file_content; 
 };
 
 typedef struct tree *tree;

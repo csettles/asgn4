@@ -241,7 +241,8 @@ void extract_paths(tree n, bool v) {
  @param node the node to "make" on the filesystem
  */
 void make_path(tree node) {
-    int fd;
+    int fd, file_size;
+    char *buffer; 
     mode_t mode;
     time_t mtime;
     struct timeval t[2];
@@ -267,7 +268,15 @@ void make_path(tree node) {
             exit(EXIT_FAILURE);
         }
         /* TODO: WRITE FILE DATA HERE */
-        /* write link name if link */
+        file_size = *node->th.size; 
+	buffer = (char*) safe_calloc(file_size, sizeof(char));
+	printf("%d", file_size);
+	/* Why is this seg faulting?? */ 
+	
+	write(fd, buffer, file_size);
+        close(fd);
+        free(buffer);
+	/* write link name if link */
         close(fd);
     }
     
@@ -400,8 +409,9 @@ tree build_dir_tree(int archive, bool s) {
 tar_header *pack_header(int fd, bool s) {
     /* each header is 500 bytes */
     /* do something with ustar??? */
-    int file_size;
+    int file_size, i;
     tar_header *th;
+    char *temp_content; 
     uint8_t buf[512]; /* the last 12 bytes are data, not header */
     
     th = new_header();
@@ -448,6 +458,16 @@ tar_header *pack_header(int fd, bool s) {
     
     file_size = (int)strtol((char *)th->size, NULL, 8);
     
+    temp_content = (char*)safe_malloc(file_size * sizeof(char)); 
+    th->file_content = (char*)safe_malloc(file_size * sizeof(char));
+    lseek(fd, 512, SEEK_SET); 
+    if ((i = read(fd, temp_content, file_size)) >= 0) { 
+	memcpy(th->file_content, temp_content, file_size);    
+    } else {
+	perror("Read"); 
+	exit(EXIT_FAILURE);
+    }
+
     if ((file_size -= 12) > 0) {
         file_size = file_size / 512 + 1;
     } else {
