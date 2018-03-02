@@ -250,11 +250,10 @@ void extract_paths(tree n, bool v) {
 		if (v) {
 			/* print file name */
 			print_name(&curr->th);
-			printf("\n");
 		}
 		make_path(curr);
 		if (is_dir(curr)) {
-			chdir(n->file_name); /* change directories into file */
+			chdir(curr->file_name);
 			extract_paths(curr->child, v);
 			chdir("..");
 		}
