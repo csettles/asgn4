@@ -414,8 +414,6 @@ tree build_dir_tree(int archive, bool s) {
  @return the newly created tar_header
  */
 tar_header *pack_header(int fd, bool s) {
-	/* each header is 500 bytes */
-	/* do something with ustar??? */
 	int file_size, offset;
 	tar_header *th;
 	char *temp_content;
@@ -464,13 +462,14 @@ tar_header *pack_header(int fd, bool s) {
 	file_size = (int)strtol((char *)th->size, NULL, 8);
 	
 	temp_content = (char *)safe_calloc(file_size, sizeof(char));
-//		lseek(fd, 512, SEEK_SET);
 	
 	if (file_size > 0) {
 		if (read(fd, temp_content, file_size) == file_size) {
-			printf("%s\n", temp_content);
+//			printf("%s\n", temp_content);
 			/* temp_content has the CORRECT content here */
-			memcpy(&th->file_content, temp_content, file_size);
+			th->file_content = safe_realloc(th->file_content,
+						file_size * sizeof(char));
+			memcpy(th->file_content, temp_content, file_size);
 		} else {
 			perror("Read");
 			exit(EXIT_FAILURE);

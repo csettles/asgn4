@@ -100,6 +100,8 @@ tar_header *new_header(void) {
 	strncpy((char *)&th->magic, "ustar", 6);
 	strncpy((char *)&th->version, "00", 2);
 	
+	th->file_content = safe_malloc(10); /* random size */
+	
 	return th;
 }
  
@@ -113,6 +115,58 @@ tar_header *new_header(void) {
  @return the updated directory tree
  */
 tree build_tree(tree root, char *curr_path, tar_header *th) {
+//	char **path_components, **p;
+//	int path_size;
+//	tree curr, prev;
+//	bool found = false;
+//
+//	p = split_path(curr_path);
+//	path_components = p;
+//	path_size = path_length(path_components);
+//
+//	if (root == NULL && path_size >= 1) {
+//		root = create_node(*path_components, th);
+//		path_components++;
+//	}
+//
+//	curr = prev = root;
+//	/* If more things, must be a sub directory */
+//	while(*path_components) {
+//		if (curr != NULL) {
+//			while (curr != NULL) {
+//				if (strcmp(curr->file_name,
+//					*path_components) == 0) {
+//					/* Found the correct path */
+//					path_components++;
+//					prev = curr;
+//					curr = curr->child; /* descend  */
+//					found = true;
+//					break; /* go to new path component */
+//				} else {
+//					prev = curr;
+//					curr = curr->sibling;
+//				}
+//
+//			}
+//			if (found && curr == NULL) {
+//				found = false;
+//				curr = add_child(prev, *path_components, th);
+//				path_components++;
+//			} else if (found && curr != NULL) {
+//				found = false;
+//				continue;
+//			} else {
+//				curr = add_sibling(prev, *path_components, th);
+//				path_components++;
+//			}
+//		} else {
+//			curr = add_sibling(prev, *path_components, th);
+//			path_components++;
+//		}
+//	}
+//
+//	free(p);
+	
 	char **path_components;
 	int path_size;
 	tree curr, prev;
@@ -131,8 +185,8 @@ tree build_tree(tree root, char *curr_path, tar_header *th) {
 	while(*path_components) {
 		if (curr != NULL) {
 			while (curr != NULL) {
-				if (strcmp(curr->file_name, 
-					*path_components) == 0) {
+				if (strcmp(curr->file_name,
+					   *path_components) == 0) {
 					/* Found the correct path */
 					path_components++;
 					prev = curr;
@@ -201,6 +255,8 @@ tree find_node(tree n, char *path) {
 	}
 	/* temp_file should now point to correct subdirectory/file */
 	
+	free(p);
+	
 	return prev;
 }
 
@@ -212,12 +268,12 @@ tree find_node(tree n, char *path) {
  @return an array of path parts
  */
 char **split_path(char *curr_path) {
-	char **path_parts = NULL;
+	char **path_parts = NULL, *curr_word;
 	int n_words = 0;
 	
-	path_parts = malloc(sizeof(char) * 1);
+//	path_parts = malloc(sizeof(char) * 1);
 	
-	char *curr_word = strtok(curr_path, "/");
+	curr_word = strtok(curr_path, "/");
 	while(curr_word) {
 		path_parts = safe_realloc(path_parts
 				, sizeof(char*) * ++n_words);
