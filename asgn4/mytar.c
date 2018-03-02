@@ -269,12 +269,12 @@ void make_path(tree node) {
 		}
 		/* TODO: WRITE FILE DATA HERE */
 		file_size = (int)strtol((char *)node->th.size, NULL, 8);
-		buffer = (char*) safe_calloc(file_size * sizeof(char), sizeof(char));
+		buffer = (char*) safe_calloc(file_size * sizeof(char), 
+				sizeof(char));
 		
 		/* file_content null here? */
 		strcpy(buffer, (char *)node->th.file_content);
 		write(fd, buffer, file_size);
-		close(fd);
 		free(buffer);
 		/* write link name if link */
 		close(fd);
@@ -480,7 +480,6 @@ tar_header *pack_header(int fd, bool s) {
 	}
 	
 	
-	free(temp_content);
 	lseek(fd, offset, SEEK_CUR); /* go to next header */
 	
 	return th;
