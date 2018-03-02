@@ -273,7 +273,7 @@ void make_path(tree node) {
 				sizeof(char));
 		
 		/* file_content null here? */
-		strcpy(buffer, (char *)node->th.file_content);
+		memcpy(buffer, (char *)node->th.file_content, file_size);
 		write(fd, buffer, file_size);
 		/* write link name if link */
 		close(fd);
@@ -316,7 +316,8 @@ void handle_dir(int archive, char *rel_path, char *path, bool s) {
 	DIR *d;
 	struct dirent *dir;
 	struct stat sb;
-	
+
+	char last; 	
 	int length_rel;
 	int length_curr;
 	char *curr_name;
@@ -335,7 +336,10 @@ void handle_dir(int archive, char *rel_path, char *path, bool s) {
 			if (lstat(curr_name, &sb) == 0) {
 				/* Is regular file */
 				if (S_ISREG(sb.st_mode)) {
-					strcat(rel_path, "/");
+					last = rel_path[strlen(rel_path) - 1];
+                        		if (last != '/') {
+						strcat(rel_path, "/");
+					}
 					strcat(rel_path, curr_name);
 					write_header(archive, rel_path,
 						     curr_name, s, '0');
@@ -349,7 +353,10 @@ void handle_dir(int archive, char *rel_path, char *path, bool s) {
 				}
 				/* Is directory */
 				if (S_ISDIR(sb.st_mode)) {
-					strcat(rel_path, "/");
+					last = rel_path[strlen(rel_path) - 1];
+                                        if (last != '/') {
+                                                strcat(rel_path, "/");
+                                        }
 					strcat(rel_path, curr_name);
 					write_header(archive, rel_path,
 						     curr_name, s, '5');
@@ -381,8 +388,16 @@ tree build_dir_tree(int archive, bool s) {
 	char full_path[255];
 	int len;
 	tree headers = NULL;
+	int null_blocks_found;
+
+	null_blocks_found = 0; 
 	
-	while ((th = pack_header(archive, s)) != NULL) {
+	while ((null_blocks_found) != 2) {
+		th = pack_header(archive, s); 
+		if (th == NULL) {
+			null_blocks_found++; 
+			continue; 
+		}
 		len = (int)strlen((char *)th->prefix);
 		
 		strcpy(full_path, (char *)th->prefix);
@@ -459,15 +474,13 @@ tar_header *pack_header(int fd, bool s) {
 	}
 	
 	file_size = (int)strtol((char *)th->size, NULL, 8);
-	
 	temp_content = (char *)safe_calloc(file_size, sizeof(char));
 	
 	if (file_size > 0) {
 		if (read(fd, temp_content, file_size) == file_size) {
-			/* temp_content has the CORRECT content here */
 			th->file_content = safe_realloc(th->file_content,
 						file_size * sizeof(char));
-			strcpy(th->file_content, temp_content);
+			memcpy(th->file_content, temp_content, file_size);
 		} else {
 			perror("Read");
 			exit(EXIT_FAILURE);
@@ -570,7 +583,7 @@ void write_header(int archive, char *path, char *rel_path, bool s, char type) {
 	struct stat sb;
 	struct passwd *pw;
 	struct group *gr;
-	
+
 	prefix = safe_calloc(155, sizeof(char));
 	name = safe_calloc(100, sizeof(char));
 	header = safe_calloc(512, sizeof(char));
