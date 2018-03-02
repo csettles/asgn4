@@ -74,8 +74,7 @@ int main(int argc, char *argv[]) {
 void list_archive(int num_paths, char **paths, bool v, bool s) {
 	/* struct passwd pd; */
 	tree files;
-	tree found;
-	int i, archive;
+	int archive;
 	
 	if ((archive = open(paths[0], O_RDONLY)) < 0) {
 		perror(paths[0]);
@@ -287,9 +286,9 @@ void make_path(tree node) {
 		mode = 0666;
 	}
 	
-	if (S_ISDIR(mode)) {
+	if (node->th.typeflag == '5') {
 		mkdir(node->file_name, mode);
-	} else if (S_ISLNK(mode)) {
+	} else if (node->th.typeflag == '2') {
 		if (symlink(node->file_name, (char *)node->th.linkname)) {
 			perror(node->file_name);
 			exit(EXIT_FAILURE);
