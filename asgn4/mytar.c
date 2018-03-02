@@ -269,12 +269,12 @@ void make_path(tree node) {
 		}
 		/* TODO: WRITE FILE DATA HERE */
 		file_size = (int)strtol((char *)node->th.size, NULL, 8);
-		buffer = (char*) safe_calloc(file_size * sizeof(char), sizeof(char));
+		buffer = (char*) safe_calloc(file_size * sizeof(char), 
+				sizeof(char));
 		
 		/* file_content null here? */
 		strcpy(buffer, (char *)node->th.file_content);
 		write(fd, buffer, file_size);
-		close(fd);
 		free(buffer);
 		/* write link name if link */
 		close(fd);
@@ -464,11 +464,9 @@ tar_header *pack_header(int fd, bool s) {
 	file_size = (int)strtol((char *)th->size, NULL, 8);
 	
 	temp_content = (char *)safe_calloc(file_size, sizeof(char));
-//		lseek(fd, 512, SEEK_SET);
 	
 	if (file_size > 0) {
 		if (read(fd, temp_content, file_size) == file_size) {
-			printf("%s\n", temp_content);
 			/* temp_content has the CORRECT content here */
 			memcpy(&th->file_content, temp_content, file_size);
 		} else {
@@ -476,14 +474,12 @@ tar_header *pack_header(int fd, bool s) {
 			exit(EXIT_FAILURE);
 		}
 		/* round up to multiple of 512 */
-//		offset = file_size + BLK_SIZE - file_size % BLK_SIZE;
 		offset = BLK_SIZE - file_size % BLK_SIZE;
 	} else {
 		offset = 0;
 	}
 	
 	
-	free(temp_content);
 	lseek(fd, offset, SEEK_CUR); /* go to next header */
 	
 	return th;
