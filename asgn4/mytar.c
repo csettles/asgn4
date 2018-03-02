@@ -636,6 +636,9 @@ void write_header(int archive, char *path, char *rel_path, bool s, char type) {
 	}
 	
 	/* name */
+	if (type == '5') {
+		strcat(name, "/");
+	}
 	memcpy(header, name, 100);
 	
 	/* mode */
@@ -656,7 +659,7 @@ void write_header(int archive, char *path, char *rel_path, bool s, char type) {
 	
 	/* size */
 	if (type == '0' || type == '\0') {
-		snprintf(working_buf, 12, "%llo", sb.st_size);
+		snprintf(working_buf, 12, "%lo", (long)sb.st_size);
 	} else {
 		snprintf(working_buf, 12, "%o", 0);
 	}
