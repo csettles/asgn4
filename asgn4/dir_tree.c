@@ -115,64 +115,13 @@ tar_header *new_header(void) {
  @return the updated directory tree
  */
 tree build_tree(tree root, char *curr_path, tar_header *th) {
-//	char **path_components, **p;
-//	int path_size;
-//	tree curr, prev;
-//	bool found = false;
-//
-//	p = split_path(curr_path);
-//	path_components = p;
-//	path_size = path_length(path_components);
-//
-//	if (root == NULL && path_size >= 1) {
-//		root = create_node(*path_components, th);
-//		path_components++;
-//	}
-//
-//	curr = prev = root;
-//	/* If more things, must be a sub directory */
-//	while(*path_components) {
-//		if (curr != NULL) {
-//			while (curr != NULL) {
-//				if (strcmp(curr->file_name,
-//					*path_components) == 0) {
-//					/* Found the correct path */
-//					path_components++;
-//					prev = curr;
-//					curr = curr->child; /* descend  */
-//					found = true;
-//					break; /* go to new path component */
-//				} else {
-//					prev = curr;
-//					curr = curr->sibling;
-//				}
-//
-//			}
-//			if (found && curr == NULL) {
-//				found = false;
-//				curr = add_child(prev, *path_components, th);
-//				path_components++;
-//			} else if (found && curr != NULL) {
-//				found = false;
-//				continue;
-//			} else {
-//				curr = add_sibling(prev, *path_components, th);
-//				path_components++;
-//			}
-//		} else {
-//			curr = add_sibling(prev, *path_components, th);
-//			path_components++;
-//		}
-//	}
-//
-//	free(p);
-	
-	char **path_components;
+	char **path_components, **p;
 	int path_size;
 	tree curr, prev;
 	bool found = false;
 	
-	path_components = split_path(curr_path);
+	p = split_path(curr_path);
+	path_components = p;
 	path_size = path_length(path_components);
 	
 	if (root == NULL && path_size >= 1) {
@@ -215,6 +164,8 @@ tree build_tree(tree root, char *curr_path, tar_header *th) {
 			path_components++;
 		}
 	}
+	
+	free(p);
 	
 	return root;
 }

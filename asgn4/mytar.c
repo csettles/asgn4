@@ -357,8 +357,8 @@ void handle_dir(int archive, char *rel_path, char *path, bool s) {
 					handle_dir(archive, rel_path,
 						   curr_name, s);
 				}
-				length_rel = strlen(rel_path);
-				length_curr = strlen(curr_name);
+				length_rel = (int)strlen(rel_path);
+				length_curr = (int)strlen(curr_name);
 				rel_path[length_rel - 1 - length_curr] = 0;
 			}
 		}
@@ -465,7 +465,6 @@ tar_header *pack_header(int fd, bool s) {
 	
 	if (file_size > 0) {
 		if (read(fd, temp_content, file_size) == file_size) {
-//			printf("%s\n", temp_content);
 			/* temp_content has the CORRECT content here */
 			th->file_content = safe_realloc(th->file_content,
 						file_size * sizeof(char));
@@ -475,7 +474,6 @@ tar_header *pack_header(int fd, bool s) {
 			exit(EXIT_FAILURE);
 		}
 		/* round up to multiple of 512 */
-//		offset = file_size + BLK_SIZE - file_size % BLK_SIZE;
 		offset = BLK_SIZE - file_size % BLK_SIZE;
 	} else {
 		offset = 0;
@@ -716,7 +714,7 @@ void write_entry(int archive, char *buf, char *path, size_t size, char type) {
 bool split_name_prefix(char *path, char *name, char *prefix) {
 	int i, j, length;
 	/* Determines how to split name and prefix */
-	length = strlen(path);
+	length = (int)strlen(path);
 	/* If over 100 chars, need to split */
 	if (length >= 100) {
 		for (i = 99; i >= 0; i--) {
