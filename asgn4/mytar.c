@@ -275,7 +275,6 @@ void make_path(tree node) {
 		/* file_content null here? */
 		strcpy(buffer, (char *)node->th.file_content);
 		write(fd, buffer, file_size);
-		free(buffer);
 		/* write link name if link */
 		close(fd);
 	}
@@ -468,7 +467,7 @@ tar_header *pack_header(int fd, bool s) {
 			/* temp_content has the CORRECT content here */
 			th->file_content = safe_realloc(th->file_content,
 						file_size * sizeof(char));
-			memcpy(th->file_content, temp_content, file_size);
+			strcpy(th->file_content, temp_content);
 		} else {
 			perror("Read");
 			exit(EXIT_FAILURE);

@@ -206,7 +206,8 @@ tree find_node(tree n, char *path) {
 	}
 	/* temp_file should now point to correct subdirectory/file */
 	
-	free(p);
+	/* This free causes an error, munmap_chunk */ 	
+	/*free(p);*/
 	
 	return prev;
 }
@@ -221,8 +222,6 @@ tree find_node(tree n, char *path) {
 char **split_path(char *curr_path) {
 	char **path_parts = NULL, *curr_word;
 	int n_words = 0;
-	
-//	path_parts = malloc(sizeof(char) * 1);
 	
 	curr_word = strtok(curr_path, "/");
 	while(curr_word) {
@@ -361,6 +360,7 @@ void print_name(tar_header *th) {
 		printf("%s/%s", th->prefix, th->name);
 	} else {
 		/* For some reason his tests only print the first 100.. idk? */ 
-		printf("%-*s", 100, th->name);
+		printf("%.*s", 100, th->name);
 	}
+	printf("\n");
 }
