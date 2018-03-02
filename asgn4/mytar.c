@@ -299,7 +299,6 @@ void make_path(tree node) {
 			perror(node->file_name);
 			exit(EXIT_FAILURE);
 		}
-		/* TODO: WRITE FILE DATA HERE */
 		file_size = (int)strtol((char *)node->th.size, NULL, 8);
 		buffer = (char*) safe_calloc(file_size * sizeof(char), 
 				sizeof(char));
