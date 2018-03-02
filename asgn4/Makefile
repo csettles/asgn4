@@ -1,4 +1,4 @@
-CFLAGS = -Wall -ansi -pedantic -g
+CFLAGS = -Wall -pedantic -g
 
 all: mem.o mytar.o dir_tree.o
 	gcc $(CFLAGS) -o mytar $^

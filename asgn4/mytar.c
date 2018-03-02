@@ -96,41 +96,6 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 	/* Need to free tree */
 }
 
-void descend_tree(tree n, char **paths, bool v) {
-	char *full_path;
-	tree curr;
-	char **path;
-	
-	if (n == NULL) {
-		return;
-	}
-	
-	full_path = safe_malloc(256);
-	
-	curr = n;
-	while (curr != NULL) {
-		
-		if (strlen((char *)curr->th.prefix) > 0) {
-			strcat(full_path, (char *)curr->th.prefix);
-			full_path[strlen(full_path)] = '/';
-		}
-		strcat(full_path, (char *)curr->th.name);
-		
-		for (path = paths; *path; path++) {
-			if (strcmp(full_path, *path) == 0) {
-				print_tree(curr, v);
-				break;
-			}
-		}
-		descend_tree(curr->child, paths, v);
-		curr = curr->sibling;
-		memset(full_path, 0, 256);
-	}
-	
-	free(full_path);
-	return;
-}
-
 /**
  Creates an archive file from the given paths.
  
@@ -229,6 +194,41 @@ void extract_archive(int num_paths, char **paths, bool v, bool s) {
 	}
 	
 	close(archive);
+	return;
+}
+
+void descend_tree(tree n, char **paths, bool v) {
+	char *full_path;
+	tree curr;
+	char **path;
+	
+	if (n == NULL) {
+		return;
+	}
+	
+	full_path = safe_malloc(256);
+	
+	curr = n;
+	while (curr != NULL) {
+		
+		if (strlen((char *)curr->th.prefix) > 0) {
+			strcat(full_path, (char *)curr->th.prefix);
+			full_path[strlen(full_path)] = '/';
+		}
+		strcat(full_path, (char *)curr->th.name);
+		
+		for (path = paths; *path; path++) {
+			if (strcmp(full_path, *path) == 0) {
+				print_tree(curr, v);
+				break;
+			}
+		}
+		descend_tree(curr->child, paths, v);
+		curr = curr->sibling;
+		memset(full_path, 0, 256);
+	}
+	
+	free(full_path);
 	return;
 }
 
@@ -416,7 +416,7 @@ tree build_dir_tree(int archive, bool s) {
 	/* Needs to build directory tree, and then we can traverse it */
 	struct stat;
 	tar_header *th;
-	char full_path[255];
+	char full_path[257];
 	int len;
 	tree headers = NULL;
 	int null_blocks_found;
@@ -435,9 +435,9 @@ tree build_dir_tree(int archive, bool s) {
 		
 		if (th->name[0] != '/') {
 			full_path[len] = '/';
-			strcpy(full_path + len + 1, (char *)th->name);
+			memcpy(full_path + len + 1, (char *)th->name, 100);
 		} else {
-			strcpy(full_path, (char *)th->name);
+			memcpy(full_path, (char *)th->name, 100);
 		}
 		
 		
@@ -507,7 +507,7 @@ tar_header *pack_header(int fd, bool s) {
 	file_size = (int)strtol((char *)th->size, NULL, 8);
 	temp_content = (char *)safe_calloc(file_size, sizeof(char));
 	
-	if (file_size > 0) {
+	if (th->typeflag == '0' || th->typeflag == '\0') {
 		if (read(fd, temp_content, file_size) == file_size) {
 			th->file_content = safe_realloc(th->file_content,
 						file_size * sizeof(char));
@@ -640,7 +640,8 @@ void write_header(int archive, char *path, char *rel_path, bool s, char type) {
 	memcpy(header, name, 100);
 	
 	/* mode */
-	snprintf(working_buf, 8, "%o", sb.st_mode);
+	snprintf(working_buf, 8, "%o", sb.st_mode & 07777);
+	/* get rid of upper three bits */
 	memcpy(header + 100, working_buf, 8);
 	memset(working_buf, 0, 32);
 	
@@ -655,7 +656,11 @@ void write_header(int archive, char *path, char *rel_path, bool s, char type) {
 	memset(working_buf, 0, 32);
 	
 	/* size */
-	snprintf(working_buf, 12, "%llo", sb.st_size);
+	if (type == '0' || type == '\0') {
+		snprintf(working_buf, 12, "%llo", sb.st_size);
+	} else {
+		snprintf(working_buf, 12, "%o", 0);
+	}
 	memcpy(header + 124, working_buf, 12);
 	memset(working_buf, 0, 32);
 	

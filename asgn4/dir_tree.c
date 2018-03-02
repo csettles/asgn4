@@ -297,7 +297,7 @@ void print_header(tar_header *th, bool v) {
 	} else {
 		printf(" %-*s/%-*s", (int)strlen((char *)th->uname),
 		       th->uname,
-		       17 - 1 - (int)strlen((char *)th->gname),
+		       17 - 1 - (int)strlen((char *)th->uname),
 		       th->gname);
 	}
 	
