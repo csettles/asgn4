@@ -42,6 +42,7 @@ void make_path(tree node);
 
 /* list_archive() */
 void list_archive(int num_paths, char **paths, bool v, bool s);
+void descend_tree(tree n, char **paths, bool v);
 
 /* helpers */
 int sum_of_string(const uint8_t *s, int length);

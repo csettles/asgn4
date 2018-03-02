@@ -90,18 +90,46 @@ void list_archive(int num_paths, char **paths, bool v, bool s) {
 		print_tree_helper(files, v);
 	}
 	
-	for (i = 0; i < num_paths; i++) {
-		found = find_node(files, paths[i]);
-		if (found == NULL) {
-			fprintf(stderr, "%s: nonexistant path\n", paths[i]);
-			continue;
-		}
-		print_tree(found, v);
-	}
+	descend_tree(files, paths, v);
 	
 	close(archive);
 	
 	/* Need to free tree */
+}
+
+void descend_tree(tree n, char **paths, bool v) {
+	char *full_path;
+	tree curr;
+	char **path;
+	
+	if (n == NULL) {
+		return;
+	}
+	
+	full_path = safe_malloc(256);
+	
+	curr = n;
+	while (curr != NULL) {
+		
+		if (strlen((char *)curr->th.prefix) > 0) {
+			strcat(full_path, (char *)curr->th.prefix);
+			full_path[strlen(full_path)] = '/';
+		}
+		strcat(full_path, (char *)curr->th.name);
+		
+		for (path = paths; *path; path++) {
+			if (strcmp(full_path, *path) == 0) {
+				print_tree(curr, v);
+				break;
+			}
+		}
+		descend_tree(curr->child, paths, v);
+		curr = curr->sibling;
+		memset(full_path, 0, 256);
+	}
+	
+	free(full_path);
+	return;
 }
 
 /**
@@ -259,8 +287,13 @@ void make_path(tree node) {
 		mode = 0666;
 	}
 	
-	if (is_dir(node)) {
+	if (S_ISDIR(mode)) {
 		mkdir(node->file_name, mode);
+	} else if (S_ISLNK(mode)) {
+		if (symlink(node->file_name, (char *)node->th.linkname)) {
+			perror(node->file_name);
+			exit(EXIT_FAILURE);
+		}
 	} else {
 		if (!(fd = open(node->file_name,
 				O_WRONLY | O_CREAT | O_TRUNC, mode))) {
@@ -275,7 +308,6 @@ void make_path(tree node) {
 		/* file_content null here? */
 		strcpy(buffer, (char *)node->th.file_content);
 		write(fd, buffer, file_size);
-		/* write link name if link */
 		close(fd);
 	}
 	
@@ -467,7 +499,7 @@ tar_header *pack_header(int fd, bool s) {
 			/* temp_content has the CORRECT content here */
 			th->file_content = safe_realloc(th->file_content,
 						file_size * sizeof(char));
-			strcpy(th->file_content, temp_content);
+			memcpy(th->file_content, temp_content, file_size);
 		} else {
 			perror("Read");
 			exit(EXIT_FAILURE);

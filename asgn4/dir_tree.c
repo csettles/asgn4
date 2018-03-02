@@ -186,7 +186,7 @@ tree find_node(tree n, char *path) {
 	p = split_path(path);
 	path_len = path_length(p);
 	
-	for (i = 0; i < path_len; i++, p++) {
+	for (i = 0; i < path_len; (void)(i++), p++) {
 		if (curr != NULL) {
 			while (curr) {
 				if (strcmp(curr->file_name,
